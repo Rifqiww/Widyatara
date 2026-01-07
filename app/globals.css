@@ -6,6 +6,10 @@
   --primary: #543310;
   --secondary: #74512D;
   --accent: #AF8F6F;
+  --accent-gold: #D97706;
+  --accent-earth: #78350F;
+  --accent-spirit: #9F1239;
+  --accent-dark: #2D241E;
 }
 
 body {
