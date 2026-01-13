@@ -160,16 +160,18 @@ const Navbar = () => {
 
           {/* Login Button */}
           <motion.div variants={itemVariants}>
-            <motion.button
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0 10px 20px -10px rgba(84,51,16,0.4)",
-              }}
-              whileTap={{ scale: 0.95 }}
-              className="px-7 py-2.5 rounded-full bg-[#543310] text-[#F8F4E1] text-sm font-extrabold shadow-[0_4px_12px_rgba(84,51,16,0.2)] hover:bg-[#3d250c] transition-all cursor-pointer"
-            >
-              Login
-            </motion.button>
+            <Link href="/login">
+              <motion.button
+                whileHover={{
+                  scale: 1.05,
+                  boxShadow: "0 10px 20px -10px rgba(84,51,16,0.4)",
+                }}
+                whileTap={{ scale: 0.95 }}
+                className="px-7 py-2.5 rounded-full bg-[#543310] text-[#F8F4E1] text-sm font-extrabold shadow-[0_4px_12px_rgba(84,51,16,0.2)] hover:bg-[#3d250c] transition-all cursor-pointer"
+              >
+                Login
+              </motion.button>
+            </Link>
           </motion.div>
         </motion.div>
       </nav>
