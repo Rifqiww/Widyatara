@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Search, Home, Compass, LogIn } from "lucide-react";
+import { useTransitionContext } from "./TransitionContext";
 
 interface NavItem {
   name: string;
@@ -19,7 +20,7 @@ const navItems: NavItem[] = [
   },
   {
     name: "Nusantara",
-    link: "/nusantara",
+    link: "/Nusantara",
   },
 ];
 
@@ -69,6 +70,15 @@ const Navbar = () => {
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: -10 },
     visible: { opacity: 1, y: 0 },
+  };
+
+  const { triggerTransition } = useTransitionContext();
+
+  const handleLinkClick = (e: React.MouseEvent, link: string) => {
+    if (link === "/Nusantara") {
+      e.preventDefault();
+      triggerTransition(link);
+    }
   };
 
   return (
@@ -121,6 +131,7 @@ const Navbar = () => {
               >
                 <Link
                   href={item.link}
+                  onClick={(e) => handleLinkClick(e, item.link)}
                   className={`
                     relative z-10 px-5 py-2.5 rounded-full text-sm font-bold tracking-tight transition-colors duration-300
                     flex items-center gap-1.5 cursor-pointer
@@ -206,7 +217,7 @@ const Navbar = () => {
         >
           {[
             { name: "Beranda", link: "/", icon: Home },
-            { name: "Nusantara", link: "/nusantara", icon: Compass },
+            { name: "Nusantara", link: "/Nusantara", icon: Compass },
             { name: "Login", link: "/login", icon: LogIn },
           ].map((item) => {
             const isActive = item.link === pathname;
@@ -216,6 +227,7 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 href={item.link}
+                onClick={(e) => handleLinkClick(e, item.link)}
                 className="flex-1 flex justify-center"
               >
                 <motion.div

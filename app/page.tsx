@@ -2,8 +2,6 @@
 import { useState } from "react";
 import HeroPage from "@/components/HeroPage";
 import LoadingScreen from "@/components/LoadingScreen";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function Home() {
@@ -22,9 +20,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="w-full h-full"
           >
-            <Navbar />
             <HeroPage />
-            <Footer />
           </motion.div>
         )}
       </AnimatePresence>
