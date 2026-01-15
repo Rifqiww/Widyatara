@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
+import { TransitionProvider } from "@/components/TransitionContext";
+import LayoutWrapper from "@/components/LayoutWrapper";
+import CloudTransition from "@/components/CloudTransition";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -28,7 +31,10 @@ export default function RootLayout({
       <body
         className={`${plusJakartaSans.variable} ${cormorantGaramond.variable} antialiased`}
       >
-        {children}
+        <TransitionProvider>
+          <CloudTransition />
+          <LayoutWrapper>{children}</LayoutWrapper>
+        </TransitionProvider>
       </body>
     </html>
   );
