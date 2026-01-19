@@ -1,7 +1,5 @@
 "use client";
 
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -12,8 +10,6 @@ export default function NotFound() {
     <main className="w-full min-h-screen flex flex-col relative overflow-hidden md:pt-36">
       {/* Background Decorative Blobs */}
       <div className="hidden md:block absolute top-[-5%] left-[-5%] w-[50%] h-[50%] bg-accent/40 rounded-full blur-[100px] pointer-events-none" />
-      <div className="hidden md:block absolute bottom-[-5%] right-[-5%] w-[50%] h-[50%] bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
-      <Navbar />
       <div className="grow flex items-center justify-center px-6 py-12 md:py-24 relative z-10">
         <div className="max-w-5xl w-full flex flex-col md:flex-row items-center gap-10 md:gap-16 text-center md:text-left">
           {/* Mascot Section */}
@@ -53,12 +49,12 @@ export default function NotFound() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <span className="inline-block px-4 py-1.5 rounded-full bg-[#543310]/5 text-[#543310]/80 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] mb-4 border border-[#543310]/10 backdrop-blur-sm">
-                Page under Maintenance
+                Page Not Found
               </span>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-[#543310] leading-[1.1] font-serif">
-                Oops! Sedang <br />
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-[#543310] leading-[1.1] font-serif">
+                Oops! Halaman <br />
                 <span className="text-accent relative">
-                  Bersiap-siap.
+                  Tidak Ditemukan.
                   <svg
                     className="absolute -bottom-2 left-0 w-full h-2 text-[#AF8F6F]/30"
                     viewBox="0 0 100 10"
@@ -81,9 +77,8 @@ export default function NotFound() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-base md:text-md lg:text-lg text-[#543310]/70 leading-relaxed font-medium max-w-lg mx-auto md:mx-0"
             >
-              Widyatara sedang dipercantik untuk memberikan pengalaman
-              menjelajah budaya yang jauh lebih seru. Masih proses pengerjaan,
-              tunggu sebentar ya!
+              Halaman ini tidak ditemukan atau mungkin belum diciptakan.
+              Tapi tenang, masih banyak hal seru di website ini.
             </motion.p>
 
             <motion.div
@@ -114,8 +109,7 @@ export default function NotFound() {
           </div>
         </div>
       </div>
-      <div className="md:hidden h-24" /> {/* Spacer for Mobile Dock */}
-      <Footer />
+      <div className="md:hidden h-24" />
     </main>
   );
 }
