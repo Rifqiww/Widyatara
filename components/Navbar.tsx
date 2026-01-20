@@ -5,8 +5,12 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Search, Home, Compass, LogIn } from "lucide-react";
+import { Search, Home, Compass, LogIn, LogOut, User } from "lucide-react";
 import { useTransitionContext } from "./TransitionContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { auth, db } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 interface NavItem {
   name: string;
@@ -28,6 +32,41 @@ const Navbar = () => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+
+  // Auth & User State
+  const { user } = useAuth();
+  const [userName, setUserName] = useState<string>("");
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (user) {
+        if (user.displayName) {
+          setUserName(user.displayName);
+        } else {
+          try {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+              setUserName(userDoc.data().name);
+            }
+          } catch (error) {
+            console.error("Error fetching user data:", error);
+          }
+        }
+      } else {
+        setUserName("");
+      }
+    };
+
+    fetchUserName();
+  }, [user]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -89,18 +128,17 @@ const Navbar = () => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className={`pointer-events-auto relative flex items-center gap-4 px-4 py-2.5 rounded-full transition-all duration-500 ${
-            scrolled
-              ? "bg-[#F8F4E1]/60 backdrop-blur-3xl backdrop-saturate-180 border border-[#F8F4E1]/50 shadow-[0_8px_32px_rgba(31,38,135,0.1)] ring-1 ring-white/30"
-              : "bg-[#F8F4E1]/30 backdrop-blur-2xl backdrop-saturate-180 border border-[#F8F4E1]/20 shadow-lg ring-1 ring-white/20"
-          }`}
+          className={`pointer-events-auto relative flex items-center gap-4 px-4 py-2.5 rounded-xl transition-all duration-500 ${scrolled
+            ? "bg-white border border-gray-100 shadow-xl ring-1 ring-black/5"
+            : "bg-white/95 backdrop-blur-md border border-white/20 shadow-lg ring-1 ring-white/20"
+            }`}
         >
           {/* Logo Section */}
           <Link href="/">
             <motion.div
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
-              className="flex items-center justify-center bg-white w-[70px] h-[70px] rounded-full shadow-inner border border-[#AF8F6F]/10 overflow-hidden cursor-pointer"
+              className="flex items-center justify-center bg-white w-[70px] h-[70px] rounded-xl shadow-inner border border-[#AF8F6F]/10 overflow-hidden cursor-pointer"
             >
               <Image
                 src="/assets/widyatara-logo.png"
@@ -133,12 +171,11 @@ const Navbar = () => {
                   href={item.link}
                   onClick={(e) => handleLinkClick(e, item.link)}
                   className={`
-                    relative z-10 px-5 py-2.5 rounded-full text-sm font-bold tracking-tight transition-colors duration-300
+                    relative z-10 px-5 py-2.5 rounded-xl text-sm font-bold tracking-tight transition-colors duration-300
                     flex items-center gap-1.5 cursor-pointer
-                    ${
-                      pathname === item.link
-                        ? "text-[#F8F4E1]"
-                        : "text-[#543310]/80 hover:text-[#543310]"
+                    ${pathname === item.link
+                      ? "text-[#F8F4E1]"
+                      : "text-[#543310]/80 hover:text-[#543310]"
                     }
                   `}
                 >
@@ -153,7 +190,7 @@ const Navbar = () => {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className="absolute inset-0 bg-[#543310]/5 rounded-full z-0"
+                      className="absolute inset-0 bg-[#543310]/5 rounded-xl z-0"
                       transition={{
                         type: "spring",
                         bounce: 0.2,
@@ -167,7 +204,7 @@ const Navbar = () => {
                 {pathname === item.link && (
                   <motion.div
                     layoutId="navActive"
-                    className="absolute inset-0 bg-[#543310] rounded-full z-0 shadow-md shadow-[#543310]/20"
+                    className="absolute inset-0 bg-[#543310] rounded-xl z-0 shadow-md shadow-[#543310]/20"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
@@ -181,20 +218,37 @@ const Navbar = () => {
             className="h-8 w-px bg-[#AF8F6F]/30 mx-1"
           />
 
-          {/* Login Button */}
+          {/* Login/User Button */}
           <motion.div variants={itemVariants}>
-            <Link href="/login">
-              <motion.button
-                whileHover={{
-                  scale: 1.05,
-                  boxShadow: "0 10px 20px -10px rgba(84,51,16,0.4)",
-                }}
-                whileTap={{ scale: 0.95 }}
-                className="px-7 py-2.5 rounded-full bg-[#543310] text-[#F8F4E1] text-sm font-extrabold shadow-[0_4px_12px_rgba(84,51,16,0.2)] hover:bg-[#3d250c] transition-all cursor-pointer"
-              >
-                Login
-              </motion.button>
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <span className="text-[#543310] font-bold text-sm hidden lg:block">
+                  Hi, {userName || "Pengguna"}
+                </span>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleLogout}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#543310] text-[#F8F4E1] shadow-md hover:bg-[#3d250c] transition-colors"
+                  title="Keluar"
+                >
+                  <LogOut size={18} />
+                </motion.button>
+              </div>
+            ) : (
+              <Link href="/login">
+                <motion.button
+                  whileHover={{
+                    scale: 1.05,
+                    boxShadow: "0 10px 20px -10px rgba(84,51,16,0.4)",
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-7 py-2.5 rounded-xl bg-[#543310] text-[#F8F4E1] text-sm font-extrabold shadow-[0_4px_12px_rgba(84,51,16,0.2)] hover:bg-[#3d250c] transition-all cursor-pointer"
+                >
+                  Login
+                </motion.button>
+              </Link>
+            )}
           </motion.div>
         </motion.div>
       </nav>
@@ -202,7 +256,7 @@ const Navbar = () => {
       {/* --- MOBILE MODERNISED NAVBAR (Liquid Dock) --- */}
       <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 md:hidden w-[90%] max-w-[400px]">
         <motion.div
-          className="relative bg-[#F8F4E1]/80 backdrop-blur-3xl border border-[#AF8F6F]/20 shadow-[0_20px_50px_rgba(84,51,16,0.2)] rounded-[35px] px-3 py-2 flex items-center justify-around"
+          className="relative bg-[#F8F4E1]/80 backdrop-blur-3xl border border-[#AF8F6F]/20 shadow-[0_20px_50px_rgba(84,51,16,0.2)] rounded-xl px-3 py-2 flex items-center justify-around"
           initial={{ y: 100, opacity: 0, scale: 0.8 }}
           animate={{
             y: isVisible ? 0 : 200, // Slide down if not visible
@@ -218,29 +272,34 @@ const Navbar = () => {
           {[
             { name: "Beranda", link: "/", icon: Home },
             { name: "Nusantara", link: "/Nusantara", icon: Compass },
-            { name: "Login", link: "/login", icon: LogIn },
-          ].map((item) => {
-            const isActive = item.link === pathname;
+            user
+              ? { name: userName?.split(" ")[0] || "Akun", action: handleLogout, icon: User, isAction: true }
+              : { name: "Login", link: "/login", icon: LogIn },
+          ].map((item: any) => {
+            const isActive = !item.isAction && item.link === pathname;
             const Icon = item.icon;
 
+            const Wrapper: any = item.isAction ? "button" : Link;
+            const props = item.isAction
+              ? { onClick: item.action }
+              : { href: item.link || "#", onClick: (e: any) => handleLinkClick(e, item.link!) };
+
             return (
-              <Link
+              <Wrapper
                 key={item.name}
-                href={item.link}
-                onClick={(e) => handleLinkClick(e, item.link)}
-                className="flex-1 flex justify-center"
+                {...props}
+                className="flex-1 flex justify-center w-full"
               >
                 <motion.div
-                  className={`relative flex flex-col items-center gap-1 p-4 rounded-3xl transition-colors duration-500 ${
-                    isActive ? "text-[#F8F4E1]" : "text-[#543310]/60"
-                  }`}
+                  className={`relative flex flex-col items-center gap-1 p-4 rounded-xl transition-colors duration-500 ${isActive ? "text-[#F8F4E1]" : "text-[#543310]/60"
+                    }`}
                   whileTap={{ scale: 0.9 }}
                 >
                   {/* Background Liquid Indicator */}
                   {isActive && (
                     <motion.div
                       layoutId="mobileNavActive"
-                      className="absolute inset-0 bg-[#543310] rounded-[28px] -z-10 shadow-[0_8px_20px_rgba(84,51,16,0.3)]"
+                      className="absolute inset-0 bg-[#543310] rounded-xl -z-10 shadow-[0_8px_20px_rgba(84,51,16,0.3)]"
                       transition={{
                         type: "spring",
                         bounce: 0.3,
@@ -258,15 +317,14 @@ const Navbar = () => {
                   >
                     <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                     <span
-                      className={`text-[8px] font-black uppercase tracking-wider ${
-                        isActive ? "opacity-100" : "opacity-70"
-                      }`}
+                      className={`text-[8px] font-black uppercase tracking-wider ${isActive ? "opacity-100" : "opacity-70"
+                        }`}
                     >
                       {item.name}
                     </span>
                   </motion.div>
                 </motion.div>
-              </Link>
+              </Wrapper>
             );
           })}
         </motion.div>

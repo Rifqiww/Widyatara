@@ -23,7 +23,7 @@ export default function LoadingScreen({ onFinished }: { onFinished: () => void }
         setIsFinished(true);
         onFinished();
       }
-    }, 10000); 
+    }, 10000);
     return () => clearTimeout(fallback);
   }, [isFinished, onFinished]);
 
@@ -45,7 +45,7 @@ export default function LoadingScreen({ onFinished }: { onFinished: () => void }
             >
               Widyatara
             </motion.h2>
-        
+
             {/* Progress Container */}
             <div className="w-64 md:w-80 h-[2px] bg-[#543310]/10 relative overflow-hidden rounded-full">
               <motion.div
@@ -80,7 +80,7 @@ export default function LoadingScreen({ onFinished }: { onFinished: () => void }
                 />
               ))}
             </div>
-            
+
             <p className="mt-4 text-[#74512D]/60 text-xs uppercase tracking-[0.3em]">
               Memuat Warisan Budaya
             </p>

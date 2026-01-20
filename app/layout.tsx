@@ -4,6 +4,7 @@ import "./globals.css";
 import { TransitionProvider } from "@/components/TransitionContext";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import CloudTransition from "@/components/CloudTransition";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -31,10 +32,12 @@ export default function RootLayout({
       <body
         className={`${plusJakartaSans.variable} ${cormorantGaramond.variable} antialiased`}
       >
-        <TransitionProvider>
-          <CloudTransition />
-          <LayoutWrapper>{children}</LayoutWrapper>
-        </TransitionProvider>
+        <AuthProvider>
+          <TransitionProvider>
+            <CloudTransition />
+            <LayoutWrapper>{children}</LayoutWrapper>
+          </TransitionProvider>
+        </AuthProvider>
       </body>
     </html>
   );
