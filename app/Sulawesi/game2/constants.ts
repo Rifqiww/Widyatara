@@ -23,7 +23,7 @@ export const SYMBOL_DATA: CardItem[] = [
   {
     id: "s1-a",
     content: "Rumah Adat Toraja",
-    image: "/assets/Sulawesi/game1/GambarBoardGame/Rumah-adat-toraja.png",
+    image: "/assets/Sulawesi/game2/Rumah-adat-toraja.png",
     type: "ANSWER",
     pairId: "s1",
     info: "Rumah adat Toraja yang atapnya melengkung keren kayak perahu. Namanya Tongkonan!",
@@ -38,7 +38,7 @@ export const SYMBOL_DATA: CardItem[] = [
   {
     id: "s2-a",
     content: "Kapal Layar Bugis",
-    image: "/assets/Sulawesi/game1/GambarBoardGame/Kapal-phinisi.png",
+    image: "/assets/Sulawesi/game2/Kapal-phinisi.png",
     type: "ANSWER",
     pairId: "s2",
     info: "Kapal legendaris penjelajah samudera dari Bugis-Makassar. Phinisi emang tiada duanya!",
@@ -53,7 +53,7 @@ export const SYMBOL_DATA: CardItem[] = [
   {
     id: "s3-a",
     content: "Senjata Tradisional",
-    image: "/assets/Sulawesi/game1/GambarBoardGame/Badik.png",
+    image: "/assets/Sulawesi/game2/Badik.png",
     type: "ANSWER",
     pairId: "s3",
     info: "Badik, senjata kecil tapi mematikan! Lambang keberanian pria Sulawesi.",
@@ -68,7 +68,7 @@ export const SYMBOL_DATA: CardItem[] = [
   {
     id: "s4-a",
     content: "Pakaian Adat Wanita",
-    image: "/assets/Sulawesi/game1/GambarBoardGame/Baju-bodo.png",
+    image: "/assets/Sulawesi/game2/Baju-bodo.png",
     type: "ANSWER",
     pairId: "s4",
     info: "Salah satu baju tertua di dunia lho! Baju Bodo cantik dan penuh warna.",
@@ -83,7 +83,7 @@ export const SYMBOL_DATA: CardItem[] = [
   {
     id: "s5-a",
     content: "Peci Khas Bugis",
-    image: "/assets/Sulawesi/game1/GambarBoardGame/Songkok-recca.png",
+    image: "/assets/Sulawesi/game2/Songkok-recca.png",
     type: "ANSWER",
     pairId: "s5",
     info: "Peci anyaman serat lontar emas yang mewah. Khas banget buat bangsawan Bugis!",
@@ -98,7 +98,7 @@ export const SYMBOL_DATA: CardItem[] = [
   {
     id: "s6-a",
     content: "Makanan Sagu Luwu",
-    image: "/assets/Sulawesi/game1/GambarBoardGame/Kapurung.png",
+    image: "/assets/Sulawesi/game2/Kapurung.png",
     type: "ANSWER",
     pairId: "s6",
     info: "Makanan sagu khas Luwu yang seger banget. Wajib coba Kapurung!",
