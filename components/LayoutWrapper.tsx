@@ -14,7 +14,8 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
-  const isNoNavPage = pathname === "/" || pathname === "/Papua";
+  const isNoNavPage =
+    pathname === "/" || pathname === "/Papua" || pathname === "/Jawa/game1";
 
   if (isAuthPage || isNoNavPage) {
     return <>{children}</>;
@@ -23,8 +24,9 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
   return (
     <>
       <div
-        className={`transition-opacity duration-500 ${isAnimating ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
+        className={`transition-opacity duration-500 ${
+          isAnimating ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
       >
         <Navbar />
       </div>
@@ -32,8 +34,9 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
       {children}
 
       <div
-        className={`transition-opacity duration-500 ${isAnimating ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
+        className={`transition-opacity duration-500 ${
+          isAnimating ? "opacity-0 pointer-events-none" : "opacity-100"
+        }`}
       >
         <Footer />
       </div>
