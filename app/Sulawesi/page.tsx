@@ -73,21 +73,21 @@ export default function SulawesiOnboarding() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    
+
     // Prevent scroll on canvas - more aggressive approach for mobile
     renderer.domElement.style.touchAction = "none";
     renderer.domElement.style.pointerEvents = "none";
     renderer.domElement.style.userSelect = "none";
     renderer.domElement.style.webkitUserSelect = "none";
     (renderer.domElement.style as any).webkitTouchCallout = "none";
-    
+
     // Prevent all scroll/wheel/touch events on canvas
     const preventScroll = (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
       return false;
     };
-    
+
     const preventTouch = (e: TouchEvent) => {
       if (isMobile && step === 1) {
         e.preventDefault();
@@ -95,7 +95,7 @@ export default function SulawesiOnboarding() {
         return false;
       }
     };
-    
+
     // Add multiple event listeners to prevent scrolling
     renderer.domElement.addEventListener("wheel", preventScroll, {
       passive: false,
@@ -112,10 +112,10 @@ export default function SulawesiOnboarding() {
     renderer.domElement.addEventListener("scroll", preventScroll, {
       passive: false,
     });
-    
+
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
-    
+
     // Store preventScroll for cleanup
     (renderer.domElement as any).__preventScroll = preventScroll;
     (renderer.domElement as any).__preventTouch = preventTouch;
@@ -167,10 +167,15 @@ export default function SulawesiOnboarding() {
         model.position.set(...finalPos);
         model.scale.set(finalScale, finalScale, finalScale);
         // Use rotation for mobile if needed, otherwise use provided rotation
-        const finalRotation = isMobile && id === "game1" 
-          ? [rotation[0], -Math.PI / 2, rotation[2]]
-          : rotation;
-        model.rotation.set(...finalRotation);
+        const finalRotation =
+          isMobile && id === "game1"
+            ? [rotation[0], -Math.PI / 2, rotation[2]]
+            : rotation;
+        model.rotation.set(
+          finalRotation[0],
+          finalRotation[1],
+          finalRotation[2],
+        );
 
         model.traverse((c) => {
           if (c instanceof THREE.Mesh) {
@@ -219,7 +224,7 @@ export default function SulawesiOnboarding() {
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
       timeRef.current += 0.016; // Increment time (approximately 60fps)
-      
+
       Object.values(modelsRef.current).forEach((model) => {
         const isHovered = model.userData.hovered;
         const isActive =
@@ -236,14 +241,17 @@ export default function SulawesiOnboarding() {
 
         // Add smooth rotation animation (slow Y-axis rotation)
         const rotationSpeed = model.userData.id === "game1" ? 0.3 : 0.4;
-        const rotationAmount = (isHovered || isActive) ? 0.05 : 0.1;
-        model.rotation.y = model.userData.baseRotation + Math.sin(timeRef.current * rotationSpeed) * rotationAmount;
+        const rotationAmount = isHovered || isActive ? 0.05 : 0.1;
+        model.rotation.y =
+          model.userData.baseRotation +
+          Math.sin(timeRef.current * rotationSpeed) * rotationAmount;
 
         // Add floating animation (gentle up and down movement)
         const floatSpeed = model.userData.id === "game1" ? 0.8 : 1.0;
         const floatAmount = 0.12; // How much the model moves up/down
         const baseY = model.userData.basePos[1];
-        const floatOffset = Math.sin(timeRef.current * floatSpeed) * floatAmount;
+        const floatOffset =
+          Math.sin(timeRef.current * floatSpeed) * floatAmount;
         // Apply floating animation to Y position
         model.position.y = baseY + floatOffset;
       });
