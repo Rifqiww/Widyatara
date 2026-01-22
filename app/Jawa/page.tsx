@@ -10,7 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Maximize2, Users, TrendingUp, Play, Lock, X } from "lucide-react";
 
-export default function KalimantanOnboarding() {
+export default function JawaOnboarding() {
   const router = useRouter();
   const { triggerTransition } = useTransitionContext();
   const mountRef = useRef<HTMLDivElement>(null);
@@ -31,6 +31,7 @@ export default function KalimantanOnboarding() {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const modelsRef = useRef<{ [key: string]: THREE.Group }>({});
   const animationFrameRef = useRef<number | null>(null);
+
   useEffect(() => {
     // Mobile check
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -94,12 +95,6 @@ export default function KalimantanOnboarding() {
             if (c instanceof THREE.Mesh) {
               c.castShadow = true;
               c.receiveShadow = true;
-              if (id === 'egrang' && c.material) {
-                const mat = Array.isArray(c.material) ? c.material : [c.material];
-                mat.forEach(m => {
-                  if ('color' in m) (m as any).color.set(0x22c55e);
-                });
-              }
             }
           });
           model.userData = { id, name, originalScale: finalScale, basePos: finalPos };
@@ -109,17 +104,23 @@ export default function KalimantanOnboarding() {
           if (Object.keys(modelsRef.current).length === 2) {
             setLoading(false);
           }
+        },
+        undefined,
+        (error) => {
+          console.error("Error loading model:", error);
         }
       );
     };
 
-    loadModel('/Kalimantan/Egrang.glb', 'egrang', 'Tantangan Egrang', [-3, -2, 0], 2.1);
-    loadModel('/Kalimantan/Manukan.glb', 'manukan', 'Memori Patung Dayak', [3, 0, 0], 2.1);
+    // Load Java specific models
+    loadModel('/gamelanan.glb', 'gamelan', 'Tantangan Gamelan', [-3, -1, 0], 1.6);
+    loadModel('/model/angklung.glb', 'angklung', 'Melodi Angklung', [3, -1, 0], 1.8);
 
     // Fallback if models take too long or fail
     const fallbackTimeout = setTimeout(() => {
       if (Object.keys(modelsRef.current).length === 0) {
         console.warn("Models failed to load within 5s");
+        setLoading(false);
       }
     }, 5000);
 
@@ -130,7 +131,7 @@ export default function KalimantanOnboarding() {
       animationFrameRef.current = requestAnimationFrame(animate);
       Object.values(modelsRef.current).forEach(model => {
         const isHovered = model.userData.hovered;
-        const isActive = isMobile && ((model.userData.id === 'egrang' && activeGameIndex === 0) || (model.userData.id === 'manukan' && activeGameIndex === 1));
+        const isActive = isMobile && ((model.userData.id === 'gamelan' && activeGameIndex === 0) || (model.userData.id === 'angklung' && activeGameIndex === 1));
 
         const baseScale = model.userData.originalScale;
         const targetScale = (isHovered || isActive) ? baseScale * 1.1 : baseScale;
@@ -173,9 +174,22 @@ export default function KalimantanOnboarding() {
       if (intersects.length > 0) {
         let obj = intersects[0].object;
         while (obj.parent && !obj.userData.id) obj = obj.parent;
-        const target = obj.userData.id === 'egrang' ? '/Kalimantan/game1' : '/Kalimantan/game2';
-        router.push(target);
+        const id = obj.userData.id;
+        handleNavigation(id);
       }
+    };
+
+    const handleNavigation = (id: string) => {
+      const target = id === 'gamelan' ? '/Jawa/game1' : '/Jawa/game2';
+      // For now if game2 doesn't exist, maybe show modal
+      if (id === 'angklung') {
+         setShowDevModal(true);
+         return;
+      }
+      triggerTransition(target);
+      setTimeout(() => {
+        window.location.href = target;
+      }, 2500);
     };
 
     const onResize = () => {
@@ -201,37 +215,32 @@ export default function KalimantanOnboarding() {
       }
       clearTimeout(fallbackTimeout);
     };
-  }, [step, isMobile]); // Added isMobile to dependencies
+  }, [step, isMobile]);
 
   useEffect(() => {
     if (step !== 1) return;
     const updateCam = () => {
       if (!cameraRef.current) return;
       if (window.innerWidth < 768) {
-        // Mobile camera: target the active model with better distance
         const targetX = 0; 
-        const cameraY = activeGameIndex === 0 ? 0 : 0.5; // Adjust height per model
-        const targetPos = new THREE.Vector3(targetX, cameraY, 10);
+        const cameraY = 1.5;
+        const targetPos = new THREE.Vector3(targetX, cameraY, 12);
         cameraRef.current.position.lerp(targetPos, 0.1);
-        cameraRef.current.lookAt(0, 0, 0);
+        cameraRef.current.lookAt(0, 0.5, 0);
 
-        // Update model visibility
         Object.values(modelsRef.current).forEach(model => {
-          const isActive = (model.userData.id === 'egrang' && activeGameIndex === 0) || 
-                          (model.userData.id === 'manukan' && activeGameIndex === 1);
+          const isActive = (model.userData.id === 'gamelan' && activeGameIndex === 0) || 
+                          (model.userData.id === 'angklung' && activeGameIndex === 1);
           model.visible = isActive;
-          
           const mobileY = model.userData.basePos[1];
           model.position.y = THREE.MathUtils.lerp(model.position.y, mobileY, 0.1)
         });
       } else {
-        // Desktop camera
         cameraRef.current.position.lerp(new THREE.Vector3(0, 2, 8), 0.05);
         cameraRef.current.lookAt(0, 0, 0);
         Object.values(modelsRef.current).forEach(model => {
           model.visible = true;
-          // Restore desktop positions
-          const originalX = model.userData.id === 'egrang' ? -3 : 3;
+          const originalX = model.userData.id === 'gamelan' ? -3 : 3;
           model.position.x = THREE.MathUtils.lerp(model.position.x, originalX, 0.1);
           model.position.y = THREE.MathUtils.lerp(model.position.y, model.userData.basePos[1], 0.1);
         });
@@ -252,7 +261,12 @@ export default function KalimantanOnboarding() {
   };
 
   const handlePlay = () => {
-    const target = activeGameIndex === 0 ? '/Kalimantan/game1' : '/Kalimantan/game2';
+    const id = activeGameIndex === 0 ? 'gamelan' : 'angklung';
+    if (id === 'angklung') {
+      setShowDevModal(true);
+      return;
+    }
+    const target = '/Jawa/game1';
     triggerTransition(target);
     setTimeout(() => {
       window.location.href = target;
@@ -265,7 +279,7 @@ export default function KalimantanOnboarding() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Three.js Canvas Container (Always Mounted) */}
+      {/* Three.js Canvas Container */}
       <div 
         ref={mountRef} 
         className={`absolute inset-0 transition-opacity duration-1000 ${step === 1 ? 'z-10 opacity-100' : 'z-[-1] opacity-0'}`} 
@@ -284,12 +298,12 @@ export default function KalimantanOnboarding() {
             {/* Content Section (Left) */}
             <div className="md:w-3/5 p-8 md:p-14 flex flex-col justify-center order-2 md:order-1 pb-20 md:pb-14">
               <h1 className="text-4xl md:text-6xl font-bold text-[var(--color-primary)] mb-6" style={{ fontFamily: 'var(--font-cormorant), serif' }}>
-                Jelajahi Pulau Kalimantan
+                Jelajahi Pulau Jawa
               </h1>
               <div className="space-y-6 text-[var(--color-foreground)]/80 leading-relaxed mb-10">
                 <p className="text-lg">
-                  Kalimantan, bagian dari pulau Borneo yang megah, adalah rumah bagi sejarah purba Nusantara. 
-                  Dari Kerajaan Kutai Martapura hingga tradisi Dayak yang harmonis dengan alam.
+                  Jawa, sang jantung Nusantara, adalah pusat peradaban yang memadukan tradisi agung dengan kemajuan modern. 
+                  Dari kejayaan Majapahit hingga warisan seni Gamelan yang mendunia.
                 </p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-6 border-y border-[var(--color-accent)]/20">
@@ -298,27 +312,27 @@ export default function KalimantanOnboarding() {
                       <Maximize2 size={16} />
                       <span className="text-[10px] uppercase font-black tracking-widest leading-none">Luas</span>
                     </div>
-                    <span className="text-xl font-bold text-[var(--color-primary)]">534k <span className="text-xs font-normal opacity-60">km²</span></span>
+                    <span className="text-xl font-bold text-[var(--color-primary)]">128k <span className="text-xs font-normal opacity-60">km²</span></span>
                   </div>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-[var(--color-accent-gold)]">
                       <Users size={16} />
                       <span className="text-[10px] uppercase font-black tracking-widest leading-none">Warga</span>
                     </div>
-                    <span className="text-xl font-bold text-[var(--color-primary)]">17.5M <span className="text-xs font-normal opacity-60">Jiwa</span></span>
+                    <span className="text-xl font-bold text-[var(--color-primary)]">154M <span className="text-xs font-normal opacity-60">Jiwa</span></span>
                   </div>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-[var(--color-accent-gold)]">
                       <TrendingUp size={16} />
-                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">Tinggi</span>
+                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">Ekonomi</span>
                     </div>
-                    <span className="text-xl font-bold text-[var(--color-primary)]">5.5% <span className="text-xs font-normal opacity-60">Tahunan</span></span>
+                    <span className="text-xl font-bold text-[var(--color-primary)]">58% <span className="text-xs font-normal opacity-60">PDB</span></span>
                   </div>
                 </div>
 
                 <p className="opacity-70 text-sm">
-                  Dikenal dengan sungai-sungainya yang raksasa and hutan hujan khatulistiwa yang menjadi paru-paru dunia. 
-                  Mari kita pelajari lebih dalam mengenai kekayaan geografi Kalimantan!
+                  Dikenal dengan tanah vulkaniknya yang subur dan situs-situs bersejarah yang megah. 
+                  Mari kita telusuri lebih dalam kekayaan budaya dan tradisi Pulau Jawa!
                 </p>
               </div>
 
@@ -333,7 +347,6 @@ export default function KalimantanOnboarding() {
 
             {/* Island Section (Right) */}
             <div className="md:w-2/5 bg-gradient-to-br from-[var(--color-primary)]/10 to-[var(--color-accent-gold)]/5 flex items-center justify-center p-8 md:p-12 relative overflow-hidden order-1 md:order-2 border-b md:border-b-0 md:border-l border-[var(--color-accent)]/20">
-              {/* Decorative elements */}
               <div className="absolute -top-4 -right-4 md:top-0 md:right-0 p-4 md:p-8 opacity-20 rotate-12">
                 <Image 
                   src="/assets/Sulawesi/game1/Thinking.png" 
@@ -351,15 +364,15 @@ export default function KalimantanOnboarding() {
                 className="relative z-10 w-full max-w-[320px] md:max-w-none"
               >
                 <Image
-                  src="/pulau/kalimantan.svg"
-                  alt="Peta Kalimantan"
-                  width={500}
-                  height={500}
+                  src="/pulau/jawa.svg"
+                  alt="Peta Jawa"
+                  width={600}
+                  height={300}
                   className="w-full h-auto drop-shadow-2xl"
                 />
                 
                 <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg border border-[var(--color-accent)]/10 whitespace-nowrap">
-                  <span className="text-[var(--color-primary)] font-black text-xs uppercase tracking-[0.4em] ml-[0.4em]">EQUATOR LAND</span>
+                  <span className="text-[var(--color-primary)] font-black text-xs uppercase tracking-[0.4em] ml-[0.4em]">HEART OF NUSANTARA</span>
                 </div>
               </motion.div>
             </div>
@@ -375,7 +388,7 @@ export default function KalimantanOnboarding() {
             {/* Header */}
             <div className="absolute top-24 md:top-32 w-full text-center pointer-events-none z-20">
               <h1 className="text-3xl md:text-6xl font-extrabold text-[var(--color-primary)] tracking-tight mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
-                Belajar Budaya Kalimantan
+                Belajar Budaya Jawa
               </h1>
               <div className="flex items-center justify-center gap-3 mt-3">
                 <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent opacity-50"></div>
@@ -388,27 +401,27 @@ export default function KalimantanOnboarding() {
 
             {/* Selection Text Overlay */}
             <div className="absolute inset-0 pointer-events-none z-10">
-              {(hoveredGame === 'egrang' || (isMobile && activeGameIndex === 0)) && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-52 md:left-[35%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out mb-22">
-                  <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2">
+              {(hoveredGame === 'gamelan' || (isMobile && activeGameIndex === 0)) && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-48 md:left-[35%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-100 ease-out z-30 ">
+                  <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2 mx-4 md:mx-0  mb-32 md:mb-0">
                     <h2 className="text-2xl md:text-3xl font-black text-[var(--color-primary)] uppercase text-center md:text-left">
-                      Tantangan Egrang
+                      Tantangan Gamelan
                     </h2>
                     <p className="text-sm md:text-base text-[var(--color-foreground)]/80 leading-relaxed text-center md:text-left">
-                      Uji keseimbanganmu dalam permainan tradisional egrang bambu yang melatih fokus.
+                      Kenali berbagai instrumen gamelan dan ciptakan harmoni musik tradisional Jawa.
                     </p>
                   </div>
                 </div>
               )}
 
-              {(hoveredGame === 'manukan' || (isMobile && activeGameIndex === 1)) && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-52 md:left-[85%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out mb-22">
-                  <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2">
+              {(hoveredGame === 'angklung' || (isMobile && activeGameIndex === 1)) && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-48 md:left-[85%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out z-30 mb-22">
+                  <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2 mx-4 md:mx-0">
                     <h2 className="text-2xl md:text-3xl font-black text-[var(--color-primary)] uppercase text-center md:text-left">
-                      Memori Patung Dayak
+                      Melodi Angklung
                     </h2>
                     <p className="text-sm md:text-base text-[var(--color-foreground)]/80 leading-relaxed text-center md:text-left">
-                      Latih ketajaman memori melalui simbol-simbol ukiran totem Dayak yang unik.
+                      Latih ketangkasanmu dalam memainkan alat musik bambu ikonik dari Jawa Barat.
                     </p>
                   </div>
                 </div>
@@ -480,10 +493,10 @@ export default function KalimantanOnboarding() {
                   <Lock size={32} className="text-[var(--color-accent-gold)]" />
                 </div>
                 <h3 className="text-3xl font-cormorant font-bold text-[var(--color-primary)] mb-4">
-                  Level 3 Masih dalam Development
+                   Segera Hadir!
                 </h3>
                 <p className="text-[var(--color-foreground)]/70 mb-8">
-                  Sabar ya! Tim kami sedang mempersiapkan petualangan yang tidak kalah seru untuk level ini. Tunggu update selanjutnya!
+                  Game ini sedang dalam tahap pengembangan. Kami sedang menyiapkan pengalaman musikal yang luar biasa untukmu!
                 </p>
                 <button
                   onClick={() => setShowDevModal(false)}

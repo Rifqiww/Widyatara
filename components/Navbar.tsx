@@ -287,14 +287,16 @@ const Navbar = () => {
                       className="absolute right-0 mt-4 w-48 bg-white text rounded-xl shadow-lg border border-primary overflow-hidden z-50"
                     >
                       {/* Profile Option */}
-                      <div>
+                      <div>                      
                         <button
                           className="cursor-pointer w-full px-4 py-3 flex items-center gap-3 hover:bg-[#e0cfad]/20 transition-colors text-left"
                           onClick={() => setIsUserDropdownOpen(false)}
                         >
                           <User size={18} className="text-[#543310]" />
                           <span className="text-[#543310] font-medium text-sm">
+                            <Link href="/profile">
                             Profil Saya
+                            </Link>
                           </span>
                         </button>
                       </div>

@@ -91,21 +91,6 @@ export default function RegisterPage() {
           />
           <div className="absolute inset-0 bg-[#543310]/40" />
         </motion.div>
-
-        <div className="relative z-10 h-full flex flex-col items-center justify-center p-12 text-center text-[#F8F4E1]">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-          >
-            <h1 className="text-7xl font-black font-serif mb-6 tracking-wide text-[#FFD700] drop-shadow-sm">
-              Mulai Petualangan
-            </h1>
-            <p className="text-xl max-w-md mx-auto leading-relaxed font-light italic tracking-wider opacity-90">
-              "Jadilah bagian dari penjaga warisan agung Ibu Pertiwi."
-            </p>
-          </motion.div>
-        </div>
       </div>
 
       {/* Register Form - Flat Design */}

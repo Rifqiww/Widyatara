@@ -9,6 +9,7 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { ArrowRight, Maximize2, Users, TrendingUp } from "lucide-react";
+import Footer from "@/components/Footer";
 
 export default function PapuaSelectionPage() {
     const router = useRouter();
@@ -368,82 +369,33 @@ export default function PapuaSelectionPage() {
 
     return (
         <div
-            className="relative w-screen h-screen overflow-hidden bg-[#FFF8E7]"
+            className="relative w-screen min-h-screen overflow-x-hidden bg-[#FFF8E7] flex flex-col"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
-            {/* Three.js Canvas */}
-            <div ref={mountRef} className="absolute inset-0 z-0" />
+            <div className="flex-grow relative min-h-screen">
+                {/* Three.js Canvas */}
+                <div ref={mountRef} className="fixed inset-0 z-0" />
 
-            {/* Subtle Vignette Overlay */}
-            <div className="absolute inset-0 pointer-events-none z-[1]"
-                style={{
-                    background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.1) 100%)'
-                }}
-            />
+                {/* Subtle Vignette Overlay */}
+                <div className="fixed inset-0 pointer-events-none z-[1]"
+                    style={{
+                        background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.1) 100%)'
+                    }}
+                />
 
-            <AnimatePresence mode="wait">
+                <AnimatePresence mode="wait">
                 {step === 0 ? (
-                    <div key="intro" className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-[#FFF8E7]/40 backdrop-blur-[2px]">
+                    <div key="intro" className="relative md:absolute md:inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-[#FFF8E7]/40 backdrop-blur-[2px] min-h-screen md:min-h-0">
                         <motion.div
                             variants={containerVariants}
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            className="max-w-5xl w-full bg-white/90 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-16px_rgba(61,40,23,0.3)] border border-[#8B5A2B]/30 flex flex-col md:flex-row relative"
+                            className="max-w-5xl w-full bg-white/95 backdrop-blur-xl rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-16px_rgba(61,40,23,0.3)] border border-[#8B5A2B]/30 flex flex-col md:flex-row relative my-8 md:my-0"
                         >
-                            {/* Content Section (Left) */}
-                            <div className="md:w-3/5 p-8 md:p-14 flex flex-col justify-center order-2 md:order-1">
-                                <h1 className="text-4xl md:text-6xl font-bold text-[#3D2817] mb-6" style={{ fontFamily: 'var(--font-cormorant), serif' }}>
-                                    Jelajahi Pulau Papua
-                                </h1>
-                                <div className="space-y-6 text-[#3D2817]/80 leading-relaxed mb-10">
-                                    <p className="text-lg">
-                                        Papua, tanah matahari terbit di ufuk timur Indonesia, adalah rumah bagi keragaman budaya yang luar biasa. 
-                                        Dari pegunungan Jayawijaya yang bersalju hingga pesisir pantai yang kaya akan sumber daya alam.
-                                    </p>
-                                    
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-6 border-y border-[#8B5A2B]/20">
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-2 text-[#8B5A2B]">
-                                                <Maximize2 size={16} />
-                                                <span className="text-[10px] uppercase font-black tracking-widest leading-none">Luas</span>
-                                            </div>
-                                            <span className="text-xl font-bold text-[#3D2817]">786k <span className="text-xs font-normal opacity-60">km²</span></span>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-2 text-[#8B5A2B]">
-                                                <Users size={16} />
-                                                <span className="text-[10px] uppercase font-black tracking-widest leading-none">Suku</span>
-                                            </div>
-                                            <span className="text-xl font-bold text-[#3D2817]">250+ <span className="text-xs font-normal opacity-60">Suku</span></span>
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-2 text-[#8B5A2B]">
-                                                <TrendingUp size={16} />
-                                                <span className="text-[10px] uppercase font-black tracking-widest leading-none">Puncak</span>
-                                            </div>
-                                            <span className="text-xl font-bold text-[#3D2817]">4.884 <span className="text-xs font-normal opacity-60">mdpl</span></span>
-                                        </div>
-                                    </div>
-
-                                    <p className="opacity-70 text-sm">
-                                        Dikenal dengan burung Cendrawasih yang ikonik dan tradisi seni ukir Asmat yang mendunia. 
-                                        Mari kita jelajahi kekayaan geografi melalui petualangan seru ini!
-                                    </p>
-                                </div>
-
-                                <button
-                                    onClick={() => setStep(1)}
-                                    className="w-full md:w-max px-10 py-5 bg-[#3D2817] text-[#FFF8E7] rounded-2xl font-black uppercase tracking-widest hover:bg-[#5A3E2B] transition-all transform hover:scale-105 shadow-[0_12px_24px_rgba(61,40,23,0.3)] flex items-center justify-center gap-3 group"
-                                >
-                                    Mulai Petualangan
-                                    <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
-                                </button>
-                            </div>
-
-                            {/* Island Section (Right) */}
-                            <div className="md:w-2/5 bg-gradient-to-br from-[#8B5A2B]/10 to-[#3D2817]/5 flex items-center justify-center p-8 md:p-12 relative overflow-hidden order-1 md:order-2 border-b md:border-b-0 md:border-l border-[#8B5A2B]/20">
+                            {/* Island Section (Now Top on Mobile) */}
+                            <div className="md:w-2/5 bg-gradient-to-br from-[#8B5A2B]/10 to-[#3D2817]/5 flex items-center justify-center p-6 md:p-12 relative overflow-hidden order-1 md:order-2 border-b md:border-b-0 md:border-l border-[#8B5A2B]/20">
                                 {/* Decorative elements */}
                                 <div className="absolute -top-4 -right-4 md:top-0 md:right-0 p-4 md:p-8 opacity-20 rotate-12">
                                     <Image 
@@ -451,15 +403,15 @@ export default function PapuaSelectionPage() {
                                         alt="Mascot Ornament" 
                                         width={160} 
                                         height={160} 
-                                        className="w-24 h-24 md:w-40 md:h-40 object-contain"
+                                        className="w-20 h-20 md:w-40 md:h-40 object-contain"
                                     />
                                 </div>
                                 
                                 <motion.div
                                     animate={{ 
-                                        y: [0, -20, 0],
-                                        rotateZ: [0, 2, 0],
-                                        scale: [1, 1.05, 1] 
+                                        y: [0, -10, 0],
+                                        rotateZ: [0, 1, 0],
+                                        scale: [1, 1.02, 1] 
                                     }}
                                     transition={{ 
                                         duration: 6, 
@@ -467,9 +419,9 @@ export default function PapuaSelectionPage() {
                                         ease: "easeInOut" 
                                     }}
                                     style={{
-                                        filter: 'drop-shadow(0 20px 30px rgba(61,40,23,0.2))'
+                                        filter: 'drop-shadow(0 15px 25px rgba(61,40,23,0.2))'
                                     }}
-                                    className="relative z-10 w-full max-w-[320px] md:max-w-none"
+                                    className="relative z-10 w-full max-w-[240px] md:max-w-none"
                                 >
                                     <Image
                                         src="/pulau/papua.svg"
@@ -480,10 +432,60 @@ export default function PapuaSelectionPage() {
                                     />
                                     
                                     {/* Subtitle label for visual depth */}
-                                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg border border-[#8B5A2B]/10 whitespace-nowrap">
-                                        <span className="text-[#3D2817] font-black text-xs uppercase tracking-[0.4em] ml-[0.4em]">TERRA PAPUA</span>
+                                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white px-3 py-1.5 rounded-full shadow-lg border border-[#8B5A2B]/10 whitespace-nowrap">
+                                        <span className="text-[#3D2817] font-black text-[10px] md:text-xs uppercase tracking-[0.4em] ml-[0.4em]">TERRA PAPUA</span>
                                     </div>
                                 </motion.div>
+                            </div>
+
+                            {/* Content Section (Now Bottom on Mobile) */}
+                            <div className="md:w-3/5 p-6 md:p-14 flex flex-col justify-center order-2 md:order-1">
+                                <h1 className="text-3xl md:text-6xl font-bold text-[#3D2817] mb-4 md:mb-6 leading-tight md:leading-normal" style={{ fontFamily: 'var(--font-cormorant), serif' }}>
+                                    Jelajahi Pulau Papua
+                                </h1>
+                                <div className="space-y-4 md:space-y-6 text-[#3D2817]/80 leading-relaxed mb-8 md:mb-10">
+                                    <p className="text-base md:text-lg">
+                                        Papua, tanah matahari terbit di ufuk timur Indonesia, adalah rumah bagi keragaman budaya yang luar biasa. 
+                                        Dari pegunungan Jayawijaya yang bersalju hingga pesisir pantai yang kaya akan sumber daya alam.
+                                    </p>
+                                    
+                                    <div className="grid grid-cols-3 gap-2 md:gap-4 py-4 md:py-6 border-y border-[#8B5A2B]/20">
+                                        <div className="flex flex-col gap-0.5 md:gap-1">
+                                            <div className="flex items-center gap-1.5 md:gap-2 text-[#8B5A2B]">
+                                                <Maximize2 size={12} className="md:w-4 md:h-4" />
+                                                <span className="text-[8px] md:text-[10px] uppercase font-black tracking-widest leading-none">Luas</span>
+                                            </div>
+                                            <span className="text-sm md:text-xl font-bold text-[#3D2817]">786k <span className="text-[10px] md:text-xs font-normal opacity-60">km²</span></span>
+                                        </div>
+                                        <div className="flex flex-col gap-0.5 md:gap-1 border-x border-[#8B5A2B]/10 px-2 md:px-0">
+                                            <div className="flex items-center gap-1.5 md:gap-2 text-[#8B5A2B]">
+                                                <Users size={12} className="md:w-4 md:h-4" />
+                                                <span className="text-[8px] md:text-[10px] uppercase font-black tracking-widest leading-none">Suku</span>
+                                            </div>
+                                            <span className="text-sm md:text-xl font-bold text-[#3D2817]">250+ <span className="text-[10px] md:text-xs font-normal opacity-60">Suku</span></span>
+                                        </div>
+                                        <div className="flex flex-col gap-0.5 md:gap-1">
+                                            <div className="flex items-center gap-1.5 md:gap-2 text-[#8B5A2B]">
+                                                <TrendingUp size={12} className="md:w-4 md:h-4" />
+                                                <span className="text-[8px] md:text-[10px] uppercase font-black tracking-widest leading-none">Puncak</span>
+                                            </div>
+                                            <span className="text-sm md:text-xl font-bold text-[#3D2817]">4.884 <span className="text-[10px] md:text-xs font-normal opacity-60">mdpl</span></span>
+                                        </div>
+                                    </div>
+
+                                    <p className="opacity-70 text-xs md:text-sm">
+                                        Dikenal dengan burung Cendrawasih yang ikonik dan tradisi seni ukir Asmat yang mendunia. 
+                                        Mari kita jelajahi kekayaan geografi melalui petualangan seru ini!
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={() => setStep(1)}
+                                    className="w-full md:w-max px-8 md:px-10 py-4 md:py-5 bg-[#3D2817] text-[#FFF8E7] rounded-xl md:rounded-2xl font-black uppercase tracking-widest hover:bg-[#5A3E2B] transition-all transform hover:scale-105 shadow-[0_12px_24px_rgba(61,40,23,0.3)] flex items-center justify-center gap-3 group"
+                                >
+                                    Mulai
+                                    <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform md:w-5 md:h-5" />
+                                </button>
                             </div>
                         </motion.div>
                     </div>
@@ -625,6 +627,11 @@ export default function PapuaSelectionPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+            </div>
+            
+            <div className="relative z-50">
+                <Footer />
+            </div>
         </div >
     );
 }

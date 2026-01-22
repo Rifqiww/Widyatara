@@ -9,6 +9,16 @@ import { useTransitionContext } from "./TransitionContext";
 const CloudTransition = () => {
   const { isAnimating, setIsAnimating, targetPath } = useTransitionContext();
   const router = useRouter();
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Buat stop animasi
   const DEBUG_SHOW = false;
@@ -73,29 +83,29 @@ const CloudTransition = () => {
 
   const clouds = useMemo(
     () => [
-      { id: 1, side: "left", top: "-25%", left: "-10%", scale: 1.7, z: 200, delay: 0},
-      { id: 2, side: "right", top: "10%", right: "40%", scale: 1.8, z: 210, delay: 0.2},
-      { id: 3, side: "left", top: "25%", left: "-20%", scale: 1.6, z: 220, delay: 0.09},
-      { id: 4, side: "right", top: "25%", right: "-25%", scale: 1.9, z: 230, delay: 0.15},
-      { id: 5, side: "left", top: "55%", left: "-40%", scale: 1.7, z: 240, delay: 0.13},
-      { id: 6, side: "right", top: "65%", right: "-40%", scale: 1.8, z: 250, delay: 0.24},
-      { id: 7, side: "left", top: "80%", left: "20%", scale: 1.6, z: 260, delay: 0.18},
-      { id: 8, side: "right", top: "5%", right: "-50%", scale: 1.7, z: 270, delay: 0.08},
-      { id: 9, side: "left", top: "-20%", left: "10%", scale: 1.5, z: 280, delay: 0.3},
-      { id: 10, side: "right", top: "10%", right: "-7%", scale: 1.7, z: 290, delay: 0},
-      { id: 11, side: "left", top: "40%", left: "10%", scale: 1.8, z: 300, delay: 0.12},
-      { id: 12, side: "right", top: "60%", right: "10%", scale: 1.6, z: 310, delay: 0.05},
-      { id: 13, side: "left", top: "-20%", left: "-40%", scale: 1.8, z: 320, delay: 0.16},
-      { id: 14, side: "right", top: "-25%", right: "-35%", scale: 1.9, z: 330, delay: 0.01},
+      { id: 1, side: "left", top: isMobile ? "-10%" : "-25%", left: isMobile ? "-50%" : "-10%", scale: isMobile ? 3 : 1.7, z: 200, delay: 0},
+      { id: 2, side: "right", top: isMobile ? "5%" : "10%", right: isMobile ? "-30%" : "40%", scale: isMobile ? 3.2 : 1.8, z: 210, delay: 0.2},
+      { id: 3, side: "left", top: isMobile ? "20%" : "25%", left: isMobile ? "-60%" : "-20%", scale: isMobile ? 2.8 : 1.6, z: 220, delay: 0.09},
+      { id: 4, side: "right", top: isMobile ? "30%" : "25%", right: isMobile ? "-40%" : "-25%", scale: isMobile ? 3.5 : 1.9, z: 230, delay: 0.15},
+      { id: 5, side: "left", top: isMobile ? "45%" : "55%", left: isMobile ? "-70%" : "-40%", scale: isMobile ? 3 : 1.7, z: 240, delay: 0.13},
+      { id: 6, side: "right", top: isMobile ? "60%" : "65%", right: isMobile ? "-60%" : "-40%", scale: isMobile ? 3.2 : 1.8, z: 250, delay: 0.24},
+      { id: 7, side: "left", top: isMobile ? "75%" : "80%", left: isMobile ? "-10%" : "20%", scale: isMobile ? 2.8 : 1.6, z: 260, delay: 0.18},
+      { id: 8, side: "right", top: isMobile ? "0%" : "5%", right: isMobile ? "-80%" : "-50%", scale: isMobile ? 3.2 : 1.7, z: 270, delay: 0.08},
+      { id: 9, side: "left", top: isMobile ? "-15%" : "-20%", left: isMobile ? "-20%" : "10%", scale: isMobile ? 2.5 : 1.5, z: 280, delay: 0.3},
+      { id: 10, side: "right", top: isMobile ? "15%" : "10%", right: isMobile ? "-20%" : "-7%", scale: isMobile ? 3 : 1.7, z: 290, delay: 0},
+      { id: 11, side: "left", top: isMobile ? "40%" : "40%", left: isMobile ? "-30%" : "10%", scale: isMobile ? 3.5 : 1.8, z: 300, delay: 0.12},
+      { id: 12, side: "right", top: isMobile ? "55%" : "60%", right: isMobile ? "-20%" : "10%", scale: isMobile ? 2.8 : 1.6, z: 310, delay: 0.05},
+      { id: 13, side: "left", top: isMobile ? "-25%" : "-20%", left: isMobile ? "-60%" : "-40%", scale: isMobile ? 3.5 : 1.8, z: 320, delay: 0.16},
+      { id: 14, side: "right", top: isMobile ? "-30%" : "-25%", right: isMobile ? "-50%" : "-35%", scale: isMobile ? 3.8 : 1.9, z: 330, delay: 0.01},
     ],
-    []
+    [isMobile]
   );
 
   return (
     <AnimatePresence mode="wait">
       {(isAnimating || DEBUG_SHOW) && (
         <div
-          className="fixed inset-0 z-9999 pointer-events-none overflow-hidden touch-none select-none"
+          className="fixed inset-0 z-[9999] pointer-events-none overflow-hidden touch-none select-none"
           style={{
             perspective: "1200px",
             transformStyle: "preserve-3d",
@@ -124,7 +134,7 @@ const CloudTransition = () => {
               }
               animate="enter"
               exit={cloud.side === "left" ? "exitLeft" : "exitRight"}
-              className={`absolute w-screen h-[70vh] flex items-center will-change-transform ${
+              className={`absolute w-screen h-[40vh] md:h-[70vh] flex items-center will-change-transform ${
                 cloud.side === "left" ? "justify-start" : "justify-end"
               }`}
               style={{
@@ -157,7 +167,7 @@ const CloudTransition = () => {
                   WebkitBackfaceVisibility: "hidden",
                 }}
               >
-                <div className="relative w-full h-full max-w-[80%] max-h-[80%]">
+                <div className="relative w-full h-full max-w-[90%] md:max-w-[80%] max-h-[90%] md:max-h-[80%]">
                   <Image
                     src="/assets/entrance-clouds.png"
                     alt={`Cloud ${cloud.id}`}
