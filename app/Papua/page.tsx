@@ -38,6 +38,7 @@ export default function PapuaSelectionPage() {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const modelsRef = useRef<{ [key: string]: THREE.Group }>({});
   const animationFrameRef = useRef<number | null>(null);
+  const timeRef = useRef<number>(0);
 
   // Text position refs
   const [textPositions, setTextPositions] = useState<{
@@ -47,17 +48,12 @@ export default function PapuaSelectionPage() {
     papeda: { x: 0, y: 0 },
   });
 
-  // Hot reload effect - memastikan halaman selalu fresh
+  // Cleanup and initialization
   useEffect(() => {
-    const hasReloaded = sessionStorage.getItem("papua-page-reloaded");
-    if (!hasReloaded) {
-      sessionStorage.setItem("papua-page-reloaded", "true");
-      window.location.reload();
-    }
-
+    // Ensure body cursor is reset
+    document.body.style.cursor = "default";
     return () => {
-      // Cleanup saat unmount
-      sessionStorage.removeItem("papua-page-reloaded");
+      document.body.style.cursor = "default";
     };
   }, []);
 
@@ -67,7 +63,7 @@ export default function PapuaSelectionPage() {
     checkMobile();
     window.addEventListener("resize", checkMobile);
 
-    if (!mountRef.current) return;
+    if (step !== 1 || !mountRef.current) return;
 
     // --- SETUP SCENE ---
     const scene = new THREE.Scene();
@@ -113,7 +109,7 @@ export default function PapuaSelectionPage() {
     const groundMat = new THREE.ShadowMaterial({ opacity: 0.2 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1;
+    ground.position.y = -2.3;
     ground.receiveShadow = true;
     scene.add(ground);
 
@@ -136,7 +132,13 @@ export default function PapuaSelectionPage() {
               c.receiveShadow = true;
             }
           });
-          model.userData = { id, name, originalScale: scale };
+          model.userData = {
+            id,
+            name,
+            originalScale: scale,
+            basePos: pos,
+            baseRotation: 0,
+          };
           scene.add(model);
           modelsRef.current[id] = model;
 
@@ -163,10 +165,10 @@ export default function PapuaSelectionPage() {
       "/menu/KayuMalele.glb",
       "kayu-malele",
       "Kayu Malele",
-      [-3.5, -1, 0],
+      [-3.5, -2.3, 0],
       2,
     );
-    loadModel("/menu/Papeda.glb", "papeda", "Papeda", [3.5, -1, 0], 1.5);
+    loadModel("/menu/Papeda.glb", "papeda", "Papeda", [3.5, -2.3, 0], 1.5);
 
     // --- INTERACTION ---
     const raycaster = new THREE.Raycaster();
@@ -191,13 +193,17 @@ export default function PapuaSelectionPage() {
 
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
+      timeRef.current += 0.016; // Increment time (approximately 60fps)
 
-      // Hover animation logic (Purely visual, independent of React state)
-      const time = Date.now() * 0.005;
       Object.values(modelsRef.current).forEach((model) => {
         const isHovered = model.userData.hovered;
+        const isActive =
+          isMobile &&
+          ((model.userData.id === "kayu-malele" && activeGameIndex === 0) ||
+            (model.userData.id === "papeda" && activeGameIndex === 1));
+
         const baseScale = model.userData.originalScale;
-        const targetScale = isHovered ? baseScale * 1.1 : baseScale;
+        const targetScale = isHovered || isActive ? baseScale * 1.1 : baseScale;
 
         // Smooth scale
         model.scale.lerp(
@@ -205,23 +211,22 @@ export default function PapuaSelectionPage() {
           0.1,
         );
 
-        // Bobbing only if hovered
-        if (isHovered) {
-          model.position.y = -1 + Math.sin(time) * 0.1;
-          // model.rotation.y += 0.01; // User said NO SPINNING
-        } else {
-          model.position.y = THREE.MathUtils.lerp(model.position.y, -1, 0.1);
-          model.rotation.set(0, 0, 0); // Reset rotation
-        }
-      });
+        // Add smooth rotation animation (slow Y-axis rotation)
+        const rotationSpeed = model.userData.id === "kayu-malele" ? 0.3 : 0.4;
+        const rotationAmount = isHovered || isActive ? 0.05 : 0.1;
+        model.rotation.y =
+          (model.userData.baseRotation || 0) +
+          Math.sin(timeRef.current * rotationSpeed) * rotationAmount;
 
-      // Mobile Camera Logic
-      if (window.innerWidth < 768) {
-        // We need to read the current active index from a ref since we are in a closure with stale state?
-        // Actually we can't access updated activeGameIndex here easily without ref or deps.
-        // But since this is purely visual loop, let's keep it simple.
-        // We will update camera position in a separate useEffect that reacts to [activeGameIndex].
-      }
+        // Add floating animation (gentle up and down movement)
+        const floatSpeed = model.userData.id === "kayu-malele" ? 0.8 : 1.0;
+        const floatAmount = 0.12; // How much the model moves up/down
+        const baseY = model.userData.basePos ? model.userData.basePos[1] : -2.3;
+        const floatOffset =
+          Math.sin(timeRef.current * floatSpeed) * floatAmount;
+        // Apply floating animation to Y position
+        model.position.y = baseY + floatOffset;
+      });
 
       renderer.render(scene, camera);
     };
@@ -322,7 +327,6 @@ export default function PapuaSelectionPage() {
         if (mountRef.current)
           mountRef.current.removeChild(rendererRef.current.domElement);
       }
-      // Dispose geometries/materials?
       scene.traverse((o) => {
         if (o instanceof THREE.Mesh) {
           o.geometry.dispose();
@@ -330,30 +334,44 @@ export default function PapuaSelectionPage() {
         }
       });
     };
-  }, []); // Empty deps = run once!
+  }, [step, isMobile]);
 
   // Separate effect for Mobile Camera and Text Position Updates
   useEffect(() => {
-    // Update text positions more frequently to ensure they align
-    if (!modelsRef.current["kayu-malele"]) return;
+    if (step !== 1) return;
 
     const updateCam = () => {
       if (!cameraRef.current) return;
       if (window.innerWidth < 768) {
+        // Swipe effect: Pan camera toward the active model's X position
         const targetX = activeGameIndex === 0 ? -3.5 : 3.5;
-        const targetPos = new THREE.Vector3(targetX, 0, 7);
+        // Camera height (3) and lookAt (1.5) keep the model lower on screen
+        const targetPos = new THREE.Vector3(targetX, 3, 11);
         cameraRef.current.position.lerp(targetPos, 0.1);
-        cameraRef.current.lookAt(targetX, 0, 0);
+        cameraRef.current.lookAt(targetX, 1.5, 0);
+
+        Object.values(modelsRef.current).forEach((m) => {
+          // Show both models to enable panning/swipe visuals
+          m.visible = true;
+          const originalX = m.userData.id === "kayu-malele" ? -3.5 : 3.5;
+          // Ensure they are at their original lateral positions for panning
+          m.position.x = THREE.MathUtils.lerp(m.position.x, originalX, 0.1);
+        });
       } else {
         // Reset for desktop
         cameraRef.current.position.lerp(new THREE.Vector3(0, 2, 8), 0.1);
         cameraRef.current.lookAt(0, 0, 0);
+        Object.values(modelsRef.current).forEach((m) => {
+          m.visible = true;
+          const originalX = m.userData.id === "kayu-malele" ? -3.5 : 3.5;
+          m.position.x = THREE.MathUtils.lerp(m.position.x, originalX, 0.1);
+        });
       }
     };
 
     const loop = setInterval(() => {
       updateCam();
-      // We can also calculate text positions here for the overlay
+      // Calculate text positions for the overlay
       const newPositions: any = {};
       if (cameraRef.current && rendererRef.current) {
         ["kayu-malele", "papeda"].forEach((id) => {
@@ -373,7 +391,7 @@ export default function PapuaSelectionPage() {
       }
     }, 16);
     return () => clearInterval(loop);
-  }, [activeGameIndex]);
+  }, [step, activeGameIndex, isMobile]);
 
   // Swipe Handlers
   const touchStartRef = useRef<number | null>(null);
@@ -486,7 +504,7 @@ export default function PapuaSelectionPage() {
 
                 <button
                   onClick={() => setStep(1)}
-                  className="w-full md:w-max px-8 md:px-10 py-4 md:py-5 bg-(--color-primary) text-white rounded-2xl font-black uppercase tracking-widest hover:bg-secondary transition-all transform hover:scale-105 shadow-[0_12px_24px_rgba(61,40,23,0.25)] flex items-center justify-center gap-3 group mb-4 md:mb-0"
+                  className="w-full md:w-max px-8 md:px-10 py-4 md:py-5 bg-(--color-primary) text-white rounded-2xl font-black uppercase tracking-widest hover:bg-secondary transition-all transform hover:scale-105 shadow-[0_12px_24px_rgba(61,40,23,0.25)] flex items-center justify-center gap-3 group mb-4 md:mb-0 cursor-pointer"
                 >
                   Mulai Petualangan
                   <ArrowRight
@@ -499,6 +517,16 @@ export default function PapuaSelectionPage() {
               {/* Island Section (Right) */}
               <div className="md:w-2/5 bg-linear-to-br from-(--color-primary)/10 to-accent-gold/5 flex items-center justify-center p-6 md:p-12 relative overflow-hidden order-1 md:order-2 border-b md:border-b-0 md:border-l border-accent/20">
                 <motion.div
+                  animate={{
+                    y: [0, -20, 0],
+                    rotateZ: [0, 1.5, 0],
+                    scale: [1, 1.02, 1],
+                  }}
+                  transition={{
+                    duration: 6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                   style={{
                     filter: "drop-shadow(0 20px 30px rgba(61,40,23,0.2))",
                   }}
@@ -546,7 +574,7 @@ export default function PapuaSelectionPage() {
             <div className="absolute inset-0 pointer-events-none z-10">
               {(hoveredGame === "kayu-malele" ||
                 (isMobile && activeGameIndex === 0)) && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-52 md:left-[35%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out mb-22">
+                <div className="absolute left-1/2 -translate-x-1/2 top-45 bottom-64 md:left-[35%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out mb-22">
                   <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2">
                     <h2 className="text-2xl md:text-3xl font-black text-(--color-primary) uppercase text-center md:text-left">
                       Kayu Malele
@@ -560,7 +588,7 @@ export default function PapuaSelectionPage() {
 
               {(hoveredGame === "papeda" ||
                 (isMobile && activeGameIndex === 1)) && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-52 md:left-[85%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out mb-22">
+                <div className="absolute left-1/2 -translate-x-1/2 top-45 bottom-64 md:left-[85%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out mb-22">
                   <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2">
                     <h2 className="text-2xl md:text-3xl font-black text-(--color-primary) uppercase text-center md:text-left">
                       Papeda
@@ -585,7 +613,7 @@ export default function PapuaSelectionPage() {
               </div>
               <button
                 onClick={handlePlay}
-                className="bg-(--color-primary) text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg active:scale-95 transition-all"
+                className="bg-(--color-primary) text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg active:scale-95 transition-all cursor-pointer"
               >
                 MAIN SEKARANG
               </button>
@@ -595,7 +623,7 @@ export default function PapuaSelectionPage() {
             <div className="absolute top-6 left-6 z-20">
               <button
                 onClick={() => setStep(0)}
-                className="bg-white/40 hover:bg-white/60 backdrop-blur-md p-3 rounded-full transition-all shadow-md border border-white/50"
+                className="bg-white/40 hover:bg-white/60 backdrop-blur-md p-3 rounded-full transition-all shadow-md border border-white/50 cursor-pointer"
               >
                 <ArrowRight size={24} className="rotate-180" />
               </button>

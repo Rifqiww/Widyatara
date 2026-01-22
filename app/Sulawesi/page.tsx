@@ -43,6 +43,7 @@ export default function SulawesiOnboarding() {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const modelsRef = useRef<{ [key: string]: THREE.Group }>({});
   const animationFrameRef = useRef<number | null>(null);
+  const timeRef = useRef<number>(0);
 
   useEffect(() => {
     // Mobile check
@@ -72,8 +73,52 @@ export default function SulawesiOnboarding() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Prevent scroll on canvas - more aggressive approach for mobile
+    renderer.domElement.style.touchAction = "none";
+    renderer.domElement.style.pointerEvents = "none";
+    renderer.domElement.style.userSelect = "none";
+    renderer.domElement.style.webkitUserSelect = "none";
+    (renderer.domElement.style as any).webkitTouchCallout = "none";
+    
+    // Prevent all scroll/wheel/touch events on canvas
+    const preventScroll = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    };
+    
+    const preventTouch = (e: TouchEvent) => {
+      if (isMobile && step === 1) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    };
+    
+    // Add multiple event listeners to prevent scrolling
+    renderer.domElement.addEventListener("wheel", preventScroll, {
+      passive: false,
+    });
+    renderer.domElement.addEventListener("touchmove", preventTouch, {
+      passive: false,
+    });
+    renderer.domElement.addEventListener("touchstart", preventTouch, {
+      passive: false,
+    });
+    renderer.domElement.addEventListener("touchend", preventTouch, {
+      passive: false,
+    });
+    renderer.domElement.addEventListener("scroll", preventScroll, {
+      passive: false,
+    });
+    
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
+    
+    // Store preventScroll for cleanup
+    (renderer.domElement as any).__preventScroll = preventScroll;
+    (renderer.domElement as any).__preventTouch = preventTouch;
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
@@ -90,12 +135,13 @@ export default function SulawesiOnboarding() {
     );
     loader.setDRACOLoader(dracoLoader);
 
-    // Shadow Catcher
+    // Shadow Catcher - adjust position for mobile
     const groundGeo = new THREE.PlaneGeometry(100, 100);
     const groundMat = new THREE.ShadowMaterial({ opacity: 0.2 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1;
+    // Adjust ground position for mobile to align shadow below objects
+    ground.position.y = isMobile ? 0.3 : -1;
     ground.receiveShadow = true;
     scene.add(ground);
 
@@ -109,15 +155,22 @@ export default function SulawesiOnboarding() {
     ) => {
       loader.load(path, (gltf) => {
         const model = gltf.scene;
-        // Apply responsiveness to scale
-        const finalScale = isMobile ? scale * 0.8 : scale;
+        // Apply responsiveness to scale and position
+        const finalScale = isMobile ? scale * 0.95 : scale;
+        // Different Y offset for each model (adjust based on model height)
+        // Increased Y offset for mobile to avoid footer overlap and ensure visibility
+        const yOffset = id === "game1" ? 3.5 : 3.5;
         const finalPos: [number, number, number] = isMobile
-          ? [0, pos[1], pos[2]]
+          ? [0, pos[1] + yOffset, pos[2]]
           : pos;
 
         model.position.set(...finalPos);
         model.scale.set(finalScale, finalScale, finalScale);
-        model.rotation.set(...rotation);
+        // Use rotation for mobile if needed, otherwise use provided rotation
+        const finalRotation = isMobile && id === "game1" 
+          ? [rotation[0], -Math.PI / 2, rotation[2]]
+          : rotation;
+        model.rotation.set(...finalRotation);
 
         model.traverse((c) => {
           if (c instanceof THREE.Mesh) {
@@ -136,6 +189,7 @@ export default function SulawesiOnboarding() {
           name,
           originalScale: finalScale,
           basePos: finalPos,
+          baseRotation: finalRotation[1], // Store Y rotation
         };
         scene.add(model);
         modelsRef.current[id] = model;
@@ -164,6 +218,8 @@ export default function SulawesiOnboarding() {
 
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
+      timeRef.current += 0.016; // Increment time (approximately 60fps)
+      
       Object.values(modelsRef.current).forEach((model) => {
         const isHovered = model.userData.hovered;
         const isActive =
@@ -177,6 +233,19 @@ export default function SulawesiOnboarding() {
           new THREE.Vector3(targetScale, targetScale, targetScale),
           0.1,
         );
+
+        // Add smooth rotation animation (slow Y-axis rotation)
+        const rotationSpeed = model.userData.id === "game1" ? 0.3 : 0.4;
+        const rotationAmount = (isHovered || isActive) ? 0.05 : 0.1;
+        model.rotation.y = model.userData.baseRotation + Math.sin(timeRef.current * rotationSpeed) * rotationAmount;
+
+        // Add floating animation (gentle up and down movement)
+        const floatSpeed = model.userData.id === "game1" ? 0.8 : 1.0;
+        const floatAmount = 0.12; // How much the model moves up/down
+        const baseY = model.userData.basePos[1];
+        const floatOffset = Math.sin(timeRef.current * floatSpeed) * floatAmount;
+        // Apply floating animation to Y position
+        model.position.y = baseY + floatOffset;
       });
       renderer.render(scene, camera);
     };
@@ -245,11 +314,39 @@ export default function SulawesiOnboarding() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mousedown", onClick);
       window.removeEventListener("resize", onResize);
-      if (animationFrameRef.current)
-        cancelAnimationFrame(animationFrameRef.current);
-      if (rendererRef.current) {
+      if (rendererRef.current && rendererRef.current.domElement) {
+        const preventScroll = (rendererRef.current.domElement as any)
+          .__preventScroll;
+        const preventTouch = (rendererRef.current.domElement as any)
+          .__preventTouch;
+        if (preventScroll) {
+          rendererRef.current.domElement.removeEventListener(
+            "wheel",
+            preventScroll,
+          );
+          rendererRef.current.domElement.removeEventListener(
+            "scroll",
+            preventScroll,
+          );
+        }
+        if (preventTouch) {
+          rendererRef.current.domElement.removeEventListener(
+            "touchmove",
+            preventTouch,
+          );
+          rendererRef.current.domElement.removeEventListener(
+            "touchstart",
+            preventTouch,
+          );
+          rendererRef.current.domElement.removeEventListener(
+            "touchend",
+            preventTouch,
+          );
+        }
         rendererRef.current.dispose();
       }
+      if (animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
     };
   }, [step, isMobile]); // Added isMobile to dependencies
 
@@ -258,46 +355,36 @@ export default function SulawesiOnboarding() {
     const updateCam = () => {
       if (!cameraRef.current) return;
       if (window.innerWidth < 768) {
-        // Mobile camera: target the active model with better distance
         const targetX = 0;
-        const cameraY = activeGameIndex === 0 ? 0.5 : 0; // Adjust height per model
-        const targetPos = new THREE.Vector3(targetX, cameraY, 9);
+        const cameraY = 2;
+        const targetPos = new THREE.Vector3(targetX, cameraY, 10);
         cameraRef.current.position.lerp(targetPos, 0.1);
-        cameraRef.current.lookAt(0, 0, 0);
+        cameraRef.current.lookAt(0, 1, 0);
 
-        // Update model visibility/position for mobile
         Object.values(modelsRef.current).forEach((model) => {
           const isActive =
             (model.userData.id === "game1" && activeGameIndex === 0) ||
             (model.userData.id === "game2" && activeGameIndex === 1);
           model.visible = isActive;
-
-          // Move up slightly on mobile to avoid UI overlap
-          const mobileY = model.userData.id === "game2" ? -1 : -0.2;
-          model.position.y = THREE.MathUtils.lerp(
-            model.position.y,
-            mobileY,
-            0.1,
-          );
+          // Don't directly set position.y here, let animate function handle floating
+          // Just ensure model is centered on X axis for mobile
+          model.position.x = THREE.MathUtils.lerp(model.position.x, 0, 0.1);
+          // Rotation is handled in animate function with floating animation
         });
       } else {
         // Desktop camera
-        cameraRef.current.position.lerp(new THREE.Vector3(0, 1, 10), 0.05);
+        cameraRef.current.position.lerp(new THREE.Vector3(0, 2, 8), 0.05);
         cameraRef.current.lookAt(0, 0, 0);
         Object.values(modelsRef.current).forEach((model) => {
           model.visible = true;
-          // Restore desktop positions
-          const originalPos = model.userData.id === "game1" ? -3 : 3;
+          const originalX = model.userData.id === "game1" ? -3 : 3;
           model.position.x = THREE.MathUtils.lerp(
             model.position.x,
-            originalPos,
+            originalX,
             0.1,
           );
-          model.position.y = THREE.MathUtils.lerp(
-            model.position.y,
-            model.userData.basePos[1],
-            0.1,
-          );
+          // Position Y is handled by animate function with floating animation
+          // Rotation is also handled in animate function
         });
       }
     };
@@ -334,7 +421,39 @@ export default function SulawesiOnboarding() {
       {/* Three.js Canvas Container (Always Mounted) */}
       <div
         ref={mountRef}
-        className={`absolute inset-0 transition-opacity duration-1000 ${step === 1 ? "z-10 opacity-100" : "z-[-1] opacity-0"}`}
+        className={`absolute inset-0 transition-opacity duration-1000 ${
+          step === 1 ? "z-10 opacity-100" : "z-[-1] opacity-0"
+        } ${step === 1 ? "pointer-events-none" : ""}`}
+        style={
+          step === 1 && isMobile
+            ? {
+                touchAction: "none",
+                WebkitTouchCallout: "none",
+                userSelect: "none",
+                WebkitUserSelect: "none",
+                overscrollBehavior: "none",
+                overflow: "hidden",
+              }
+            : {}
+        }
+        onTouchStart={(e) => {
+          if (step === 1 && isMobile) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onTouchMove={(e) => {
+          if (step === 1 && isMobile) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onWheel={(e) => {
+          if (step === 1 && isMobile) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
       />
       <AnimatePresence mode="wait">
         {step === 0 ? (
@@ -423,7 +542,7 @@ export default function SulawesiOnboarding() {
 
               <button
                 onClick={() => setStep(1)}
-                className="w-full md:w-max px-10 py-5 bg-[var(--color-primary)] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[var(--color-secondary)] transition-all transform hover:scale-105 shadow-[0_12px_24px_rgba(30,58,138,0.3)] flex items-center justify-center gap-3 group"
+                className="w-full md:w-max px-10 py-5 bg-[var(--color-primary)] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[var(--color-secondary)] transition-all transform hover:scale-105 shadow-[0_12px_24px_rgba(30,58,138,0.3)] flex items-center justify-center gap-3 group cursor-pointer"
               >
                 Mulai Petualangan
                 <ArrowRight
@@ -438,6 +557,11 @@ export default function SulawesiOnboarding() {
               {/* Decorative elements */}
 
               <motion.div
+                animate={{
+                  y: [0, -20, 0],
+                  rotateZ: [0, 1.5, 0],
+                  scale: [1, 1.02, 1],
+                }}
                 transition={{
                   duration: 6,
                   repeat: Infinity,
@@ -531,7 +655,7 @@ export default function SulawesiOnboarding() {
               </div>
               <button
                 onClick={handlePlay}
-                className="bg-[var(--color-primary)] text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg active:scale-95 transition-all"
+                className="bg-[var(--color-primary)] text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg active:scale-95 transition-all cursor-pointer"
               >
                 MAIN SEKARANG
               </button>
@@ -541,7 +665,7 @@ export default function SulawesiOnboarding() {
             <div className="absolute top-6 left-6 z-20">
               <button
                 onClick={() => setStep(0)}
-                className="bg-white/40 hover:bg-white/60 backdrop-blur-md p-3 rounded-full transition-all shadow-md border border-white/50"
+                className="bg-white/40 hover:bg-white/60 backdrop-blur-md p-3 rounded-full transition-all shadow-md border border-white/50 cursor-pointer"
               >
                 <ArrowRight size={24} className="rotate-180" />
               </button>
@@ -566,7 +690,7 @@ export default function SulawesiOnboarding() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDevModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer"
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -577,7 +701,7 @@ export default function SulawesiOnboarding() {
               <div className="absolute top-0 right-0 p-4">
                 <button
                   onClick={() => setShowDevModal(false)}
-                  className="p-2 hover:bg-black/5 rounded-full transition-colors"
+                  className="p-2 hover:bg-black/5 rounded-full transition-colors cursor-pointer"
                 >
                   <X size={20} className="text-[var(--color-primary)]" />
                 </button>
@@ -596,7 +720,7 @@ export default function SulawesiOnboarding() {
                 </p>
                 <button
                   onClick={() => setShowDevModal(false)}
-                  className="w-full py-4 bg-[var(--color-primary)] text-white rounded-xl font-bold hover:bg-[var(--color-secondary)] transition-colors shadow-lg"
+                  className="w-full py-4 bg-[var(--color-primary)] text-white rounded-xl font-bold hover:bg-[var(--color-secondary)] transition-colors shadow-lg cursor-pointer"
                 >
                   Dimengerti
                 </button>
