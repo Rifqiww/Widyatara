@@ -28,7 +28,10 @@ const caveat = Caveat({
 
 export const metadata: Metadata = {
   title: "Widyatara",
-  description: "Pucuk Sigma Elearning Bos",
+  description: "Website edukasi budaya next level",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

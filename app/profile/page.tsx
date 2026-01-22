@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Star,
   Award,
+  ArrowLeft
 } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -140,7 +141,7 @@ export default function ProfilePage() {
             onClick={() => router.back()}
             className="flex items-center gap-2 text-[#543310] hover:text-[#74512D] transition-colors mb-4 font-bold uppercase tracking-wider text-sm"
           >
-            <ChevronRight className="rotate-180" size={20} />
+            <ArrowLeft size={20} />
             Kembali
           </button>
           <h1 className="text-4xl md:text-5xl font-black font-serif text-[#543310] uppercase tracking-wide">

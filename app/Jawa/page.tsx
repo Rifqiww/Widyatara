@@ -1,25 +1,30 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTransitionContext } from "@/components/TransitionContext";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Maximize2, Users, TrendingUp, Play, Lock, X } from "lucide-react";
+import {
+  ArrowRight,
+  Maximize2,
+  Users,
+  TrendingUp,
+  Play,
+  Lock,
+  X,
+} from "lucide-react";
 
 export default function JawaOnboarding() {
   const router = useRouter();
-  const { triggerTransition } = useTransitionContext();
   const mountRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [hoveredGame, setHoveredGame] = useState<string | null>(null);
-  const [activeGameIndex, setActiveGameIndex] = useState(0); 
+  const [activeGameIndex, setActiveGameIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [step, setStep] = useState(0);
-  const [showDevModal, setShowDevModal] = useState(false);
 
   const containerVariants = {
     initial: { opacity: 0, y: 20 },
@@ -36,7 +41,7 @@ export default function JawaOnboarding() {
     // Mobile check
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
 
     if (step !== 1 || !mountRef.current) return;
 
@@ -44,7 +49,12 @@ export default function JawaOnboarding() {
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(
+      50,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000,
+    );
     camera.position.set(0, 2, 6);
     cameraRef.current = camera;
 
@@ -68,7 +78,9 @@ export default function JawaOnboarding() {
 
     const loader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+    dracoLoader.setDecoderPath(
+      "https://www.gstatic.com/draco/versioned/decoders/1.5.7/",
+    );
     loader.setDRACOLoader(dracoLoader);
 
     // Shadow Catcher
@@ -80,14 +92,23 @@ export default function JawaOnboarding() {
     ground.receiveShadow = true;
     scene.add(ground);
 
-    const loadModel = (path: string, id: string, name: string, pos: [number, number, number], scale: number) => {
-      loader.load(path, 
+    const loadModel = (
+      path: string,
+      id: string,
+      name: string,
+      pos: [number, number, number],
+      scale: number,
+    ) => {
+      loader.load(
+        path,
         (gltf) => {
           const model = gltf.scene;
 
           // Apply responsiveness to scale and position
           const finalScale = isMobile ? scale * 0.7 : scale;
-          const finalPos: [number, number, number] = isMobile ? [0, pos[1], pos[2]] : pos;
+          const finalPos: [number, number, number] = isMobile
+            ? [0, pos[1], pos[2]]
+            : pos;
 
           model.position.set(...finalPos);
           model.scale.set(finalScale, finalScale, finalScale);
@@ -97,7 +118,12 @@ export default function JawaOnboarding() {
               c.receiveShadow = true;
             }
           });
-          model.userData = { id, name, originalScale: finalScale, basePos: finalPos };
+          model.userData = {
+            id,
+            name,
+            originalScale: finalScale,
+            basePos: finalPos,
+          };
           scene.add(model);
           modelsRef.current[id] = model;
 
@@ -108,13 +134,25 @@ export default function JawaOnboarding() {
         undefined,
         (error) => {
           console.error("Error loading model:", error);
-        }
+        },
       );
     };
 
     // Load Java specific models
-    loadModel('/gamelanan.glb', 'gamelan', 'Tantangan Gamelan', [-3, -1, 0], 1.6);
-    loadModel('/model/angklung.glb', 'angklung', 'Melodi Angklung', [3, -1, 0], 1.8);
+    loadModel(
+      "/gamelanan.glb",
+      "gamelan",
+      "Tantangan Gamelan",
+      [-3, -1, 0],
+      1.6,
+    );
+    loadModel(
+      "/model/angklung.glb",
+      "angklung",
+      "Melodi Angklung",
+      [3, -1, 0],
+      1.8,
+    );
 
     // Fallback if models take too long or fail
     const fallbackTimeout = setTimeout(() => {
@@ -129,13 +167,19 @@ export default function JawaOnboarding() {
 
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
-      Object.values(modelsRef.current).forEach(model => {
+      Object.values(modelsRef.current).forEach((model) => {
         const isHovered = model.userData.hovered;
-        const isActive = isMobile && ((model.userData.id === 'gamelan' && activeGameIndex === 0) || (model.userData.id === 'angklung' && activeGameIndex === 1));
+        const isActive =
+          isMobile &&
+          ((model.userData.id === "gamelan" && activeGameIndex === 0) ||
+            (model.userData.id === "angklung" && activeGameIndex === 1));
 
         const baseScale = model.userData.originalScale;
-        const targetScale = (isHovered || isActive) ? baseScale * 1.1 : baseScale;
-        model.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+        const targetScale = isHovered || isActive ? baseScale * 1.1 : baseScale;
+        model.scale.lerp(
+          new THREE.Vector3(targetScale, targetScale, targetScale),
+          0.1,
+        );
       });
       renderer.render(scene, camera);
     };
@@ -146,21 +190,24 @@ export default function JawaOnboarding() {
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(Object.values(modelsRef.current), true);
+      const intersects = raycaster.intersectObjects(
+        Object.values(modelsRef.current),
+        true,
+      );
       let hitId: string | null = null;
       if (intersects.length > 0) {
-        document.body.style.cursor = 'pointer';
+        document.body.style.cursor = "pointer";
         let obj = intersects[0].object;
         while (obj.parent && !obj.userData.id) obj = obj.parent;
         if (obj.userData.id) hitId = obj.userData.id;
       }
-      Object.values(modelsRef.current).forEach(m => {
-        m.userData.hovered = (m.userData.id === (hitId as any));
+      Object.values(modelsRef.current).forEach((m) => {
+        m.userData.hovered = m.userData.id === (hitId as any);
       });
       if (hitId) {
         setHoveredGame(hitId);
       } else {
-        document.body.style.cursor = 'default';
+        document.body.style.cursor = "default";
         setHoveredGame(null);
       }
     };
@@ -170,7 +217,10 @@ export default function JawaOnboarding() {
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(Object.values(modelsRef.current), true);
+      const intersects = raycaster.intersectObjects(
+        Object.values(modelsRef.current),
+        true,
+      );
       if (intersects.length > 0) {
         let obj = intersects[0].object;
         while (obj.parent && !obj.userData.id) obj = obj.parent;
@@ -180,20 +230,13 @@ export default function JawaOnboarding() {
     };
 
     const handleNavigation = (id: string) => {
-      const target = id === 'gamelan' ? '/Jawa/game1' : '/Jawa/game2';
-      // For now if game2 doesn't exist, maybe show modal
-      if (id === 'angklung') {
-         setShowDevModal(true);
-         return;
-      }
-      triggerTransition(target);
-      setTimeout(() => {
-        window.location.href = target;
-      }, 2500);
+      const target = id === "gamelan" ? "/Jawa/game1" : "/Jawa/game2";
+      router.push(target);
     };
 
     const onResize = () => {
-      if (!cameraRef.current || !rendererRef.current || !mountRef.current) return;
+      if (!cameraRef.current || !rendererRef.current || !mountRef.current)
+        return;
       const width = window.innerWidth;
       const height = window.innerHeight;
       cameraRef.current.aspect = width / height;
@@ -201,15 +244,16 @@ export default function JawaOnboarding() {
       rendererRef.current.setSize(width, height);
     };
 
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mousedown', onClick);
-    window.addEventListener('resize', onResize);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mousedown", onClick);
+    window.addEventListener("resize", onResize);
 
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mousedown', onClick);
-      window.removeEventListener('resize', onResize);
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mousedown", onClick);
+      window.removeEventListener("resize", onResize);
+      if (animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
       if (rendererRef.current) {
         rendererRef.current.dispose();
       }
@@ -222,27 +266,40 @@ export default function JawaOnboarding() {
     const updateCam = () => {
       if (!cameraRef.current) return;
       if (window.innerWidth < 768) {
-        const targetX = 0; 
+        const targetX = 0;
         const cameraY = 1.5;
         const targetPos = new THREE.Vector3(targetX, cameraY, 12);
         cameraRef.current.position.lerp(targetPos, 0.1);
         cameraRef.current.lookAt(0, 0.5, 0);
 
-        Object.values(modelsRef.current).forEach(model => {
-          const isActive = (model.userData.id === 'gamelan' && activeGameIndex === 0) || 
-                          (model.userData.id === 'angklung' && activeGameIndex === 1);
+        Object.values(modelsRef.current).forEach((model) => {
+          const isActive =
+            (model.userData.id === "gamelan" && activeGameIndex === 0) ||
+            (model.userData.id === "angklung" && activeGameIndex === 1);
           model.visible = isActive;
           const mobileY = model.userData.basePos[1];
-          model.position.y = THREE.MathUtils.lerp(model.position.y, mobileY, 0.1)
+          model.position.y = THREE.MathUtils.lerp(
+            model.position.y,
+            mobileY,
+            0.1,
+          );
         });
       } else {
         cameraRef.current.position.lerp(new THREE.Vector3(0, 2, 8), 0.05);
         cameraRef.current.lookAt(0, 0, 0);
-        Object.values(modelsRef.current).forEach(model => {
+        Object.values(modelsRef.current).forEach((model) => {
           model.visible = true;
-          const originalX = model.userData.id === 'gamelan' ? -3 : 3;
-          model.position.x = THREE.MathUtils.lerp(model.position.x, originalX, 0.1);
-          model.position.y = THREE.MathUtils.lerp(model.position.y, model.userData.basePos[1], 0.1);
+          const originalX = model.userData.id === "gamelan" ? -3 : 3;
+          model.position.x = THREE.MathUtils.lerp(
+            model.position.x,
+            originalX,
+            0.1,
+          );
+          model.position.y = THREE.MathUtils.lerp(
+            model.position.y,
+            model.userData.basePos[1],
+            0.1,
+          );
         });
       }
     };
@@ -251,7 +308,8 @@ export default function JawaOnboarding() {
   }, [step, activeGameIndex]);
 
   const touchStartRef = useRef<number | null>(null);
-  const handleTouchStart = (e: React.TouchEvent) => touchStartRef.current = e.touches[0].clientX;
+  const handleTouchStart = (e: React.TouchEvent) =>
+    (touchStartRef.current = e.touches[0].clientX);
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartRef.current === null) return;
     const diff = touchStartRef.current - e.changedTouches[0].clientX;
@@ -261,28 +319,20 @@ export default function JawaOnboarding() {
   };
 
   const handlePlay = () => {
-    const id = activeGameIndex === 0 ? 'gamelan' : 'angklung';
-    if (id === 'angklung') {
-      setShowDevModal(true);
-      return;
-    }
-    const target = '/Jawa/game1';
-    triggerTransition(target);
-    setTimeout(() => {
-      window.location.href = target;
-    }, 2500);
+    const target = activeGameIndex === 0 ? "/Jawa/game1" : "/Jawa/game2";
+    router.push(target);
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen md:h-screen w-full bg-[var(--color-background)] flex items-center justify-center font-plus-jakarta relative overflow-y-auto md:overflow-hidden py-10 md:py-0"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       {/* Three.js Canvas Container */}
-      <div 
-        ref={mountRef} 
-        className={`absolute inset-0 transition-opacity duration-1000 ${step === 1 ? 'z-10 opacity-100' : 'z-[-1] opacity-0'}`} 
+      <div
+        ref={mountRef}
+        className={`absolute inset-0 transition-opacity duration-1000 ${step === 1 ? "z-10 opacity-100" : "z-[-1] opacity-0"}`}
       />
 
       <AnimatePresence mode="wait">
@@ -296,43 +346,69 @@ export default function JawaOnboarding() {
             className="max-w-5xl w-[92%] md:w-full bg-white/90 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-16px_rgba(20,83,45,0.2)] border border-[var(--color-accent)]/30 flex flex-col md:flex-row relative mb-20 md:mb-0"
           >
             {/* Content Section (Left) */}
-            <div className="md:w-3/5 p-8 md:p-14 flex flex-col justify-center order-2 md:order-1 pb-20 md:pb-14">
-              <h1 className="text-4xl md:text-6xl font-bold text-[var(--color-primary)] mb-6" style={{ fontFamily: 'var(--font-cormorant), serif' }}>
+            <div className="md:w-3/5 p-6 md:p-14 flex flex-col justify-center order-2 md:order-1 pb-20 md:pb-14">
+              <h1
+                className="text-4xl md:text-6xl font-bold text-[var(--color-primary)] mb-6"
+                style={{ fontFamily: "var(--font-cormorant), serif" }}
+              >
                 Jelajahi Pulau Jawa
               </h1>
               <div className="space-y-6 text-[var(--color-foreground)]/80 leading-relaxed mb-10">
                 <p className="text-lg">
-                  Jawa, sang jantung Nusantara, adalah pusat peradaban yang memadukan tradisi agung dengan kemajuan modern. 
-                  Dari kejayaan Majapahit hingga warisan seni Gamelan yang mendunia.
+                  Jawa, sang jantung Nusantara, adalah pusat peradaban yang
+                  memadukan tradisi agung dengan kemajuan modern. Dari kejayaan
+                  Majapahit hingga warisan seni Gamelan yang mendunia.
                 </p>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-6 border-y border-[var(--color-accent)]/20">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-[var(--color-accent-gold)]">
                       <Maximize2 size={16} />
-                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">Luas</span>
+                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">
+                        Luas
+                      </span>
                     </div>
-                    <span className="text-xl font-bold text-[var(--color-primary)]">128k <span className="text-xs font-normal opacity-60">km²</span></span>
+                    <span className="text-xl font-bold text-[var(--color-primary)]">
+                      128k{" "}
+                      <span className="text-xs font-normal opacity-60">
+                        km²
+                      </span>
+                    </span>
                   </div>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-[var(--color-accent-gold)]">
                       <Users size={16} />
-                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">Warga</span>
+                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">
+                        Warga
+                      </span>
                     </div>
-                    <span className="text-xl font-bold text-[var(--color-primary)]">154M <span className="text-xs font-normal opacity-60">Jiwa</span></span>
+                    <span className="text-xl font-bold text-[var(--color-primary)]">
+                      154M{" "}
+                      <span className="text-xs font-normal opacity-60">
+                        Jiwa
+                      </span>
+                    </span>
                   </div>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-[var(--color-accent-gold)]">
                       <TrendingUp size={16} />
-                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">Ekonomi</span>
+                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">
+                        Ekonomi
+                      </span>
                     </div>
-                    <span className="text-xl font-bold text-[var(--color-primary)]">58% <span className="text-xs font-normal opacity-60">PDB</span></span>
+                    <span className="text-xl font-bold text-[var(--color-primary)]">
+                      58%{" "}
+                      <span className="text-xs font-normal opacity-60">
+                        PDB
+                      </span>
+                    </span>
                   </div>
                 </div>
 
                 <p className="opacity-70 text-sm">
-                  Dikenal dengan tanah vulkaniknya yang subur dan situs-situs bersejarah yang megah. 
-                  Mari kita telusuri lebih dalam kekayaan budaya dan tradisi Pulau Jawa!
+                  Dikenal dengan tanah vulkaniknya yang subur dan situs-situs
+                  bersejarah yang megah. Mari kita telusuri lebih dalam kekayaan
+                  budaya dan tradisi Pulau Jawa!
                 </p>
               </div>
 
@@ -341,25 +417,18 @@ export default function JawaOnboarding() {
                 className="w-full md:w-max px-10 py-5 bg-[var(--color-primary)] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[var(--color-secondary)] transition-all transform hover:scale-105 shadow-[0_12px_24px_rgba(20,83,45,0.3)] flex items-center justify-center gap-3 group"
               >
                 Mulai Petualangan
-                <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
+                <ArrowRight
+                  size={22}
+                  className="group-hover:translate-x-2 transition-transform"
+                />
               </button>
             </div>
 
             {/* Island Section (Right) */}
             <div className="md:w-2/5 bg-gradient-to-br from-[var(--color-primary)]/10 to-[var(--color-accent-gold)]/5 flex items-center justify-center p-8 md:p-12 relative overflow-hidden order-1 md:order-2 border-b md:border-b-0 md:border-l border-[var(--color-accent)]/20">
-              <div className="absolute -top-4 -right-4 md:top-0 md:right-0 p-4 md:p-8 opacity-20 rotate-12">
-                <Image 
-                  src="/assets/Sulawesi/game1/Thinking.png" 
-                  alt="Mascot Ornament" 
-                  width={160} 
-                  height={160} 
-                  className="w-24 h-24 md:w-40 md:h-40 object-contain"
-                />
-              </div>
-              
               <motion.div
                 style={{
-                  filter: 'drop-shadow(0 20px 30px rgba(20,83,45,0.2))'
+                  filter: "drop-shadow(0 20px 30px rgba(20,83,45,0.2))",
                 }}
                 className="relative z-10 w-full max-w-[320px] md:max-w-none"
               >
@@ -370,9 +439,11 @@ export default function JawaOnboarding() {
                   height={300}
                   className="w-full h-auto drop-shadow-2xl"
                 />
-                
+
                 <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg border border-[var(--color-accent)]/10 whitespace-nowrap">
-                  <span className="text-[var(--color-primary)] font-black text-xs uppercase tracking-[0.4em] ml-[0.4em]">HEART OF NUSANTARA</span>
+                  <span className="text-[var(--color-primary)] font-black text-xs uppercase tracking-[0.4em] ml-[0.4em]">
+                    HEART OF NUSANTARA
+                  </span>
                 </div>
               </motion.div>
             </div>
@@ -401,27 +472,31 @@ export default function JawaOnboarding() {
 
             {/* Selection Text Overlay */}
             <div className="absolute inset-0 pointer-events-none z-10">
-              {(hoveredGame === 'gamelan' || (isMobile && activeGameIndex === 0)) && (
+              {(hoveredGame === "gamelan" ||
+                (isMobile && activeGameIndex === 0)) && (
                 <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-48 md:left-[35%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-100 ease-out z-30 ">
                   <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2 mx-4 md:mx-0  mb-32 md:mb-0">
                     <h2 className="text-2xl md:text-3xl font-black text-[var(--color-primary)] uppercase text-center md:text-left">
                       Tantangan Gamelan
                     </h2>
                     <p className="text-sm md:text-base text-[var(--color-foreground)]/80 leading-relaxed text-center md:text-left">
-                      Kenali berbagai instrumen gamelan dan ciptakan harmoni musik tradisional Jawa.
+                      Kenali berbagai instrumen gamelan dan ciptakan harmoni
+                      musik tradisional Jawa.
                     </p>
                   </div>
                 </div>
               )}
 
-              {(hoveredGame === 'angklung' || (isMobile && activeGameIndex === 1)) && (
+              {(hoveredGame === "angklung" ||
+                (isMobile && activeGameIndex === 1)) && (
                 <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-48 md:left-[85%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out z-30 mb-22">
                   <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2 mx-4 md:mx-0">
                     <h2 className="text-2xl md:text-3xl font-black text-[var(--color-primary)] uppercase text-center md:text-left">
                       Melodi Angklung
                     </h2>
                     <p className="text-sm md:text-base text-[var(--color-foreground)]/80 leading-relaxed text-center md:text-left">
-                      Latih ketangkasanmu dalam memainkan alat musik bambu ikonik dari Jawa Barat.
+                      Latih ketangkasanmu dalam memainkan alat musik bambu
+                      ikonik dari Jawa Barat.
                     </p>
                   </div>
                 </div>
@@ -431,10 +506,14 @@ export default function JawaOnboarding() {
             {/* Mobile Controls */}
             <div className="md:hidden absolute bottom-8 w-full flex flex-col items-center gap-5 z-20">
               <div className="flex gap-3 mb-1">
-                <div className={`h-2.5 rounded-full transition-all duration-300 ${activeGameIndex === 0 ? 'w-8 bg-[var(--color-primary)]' : 'w-2.5 bg-[var(--color-primary)]/30'}`} />
-                <div className={`h-2.5 rounded-full transition-all duration-300 ${activeGameIndex === 1 ? 'w-8 bg-[var(--color-primary)]' : 'w-2.5 bg-[var(--color-primary)]/30'}`} />
+                <div
+                  className={`h-2.5 rounded-full transition-all duration-300 ${activeGameIndex === 0 ? "w-8 bg-[var(--color-primary)]" : "w-2.5 bg-[var(--color-primary)]/30"}`}
+                />
+                <div
+                  className={`h-2.5 rounded-full transition-all duration-300 ${activeGameIndex === 1 ? "w-8 bg-[var(--color-primary)]" : "w-2.5 bg-[var(--color-primary)]/30"}`}
+                />
               </div>
-              <button 
+              <button
                 onClick={handlePlay}
                 className="bg-[var(--color-primary)] text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg active:scale-95 transition-all"
               >
@@ -459,54 +538,6 @@ export default function JawaOnboarding() {
               </p>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Development Pop-up Modal */}
-      <AnimatePresence>
-        {showDevModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowDevModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-[var(--color-accent)]/20 overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 p-4">
-                <button 
-                  onClick={() => setShowDevModal(false)}
-                  className="p-2 hover:bg-black/5 rounded-full transition-colors"
-                >
-                  <X size={20} className="text-[var(--color-primary)]" />
-                </button>
-              </div>
-
-              <div className="text-center">
-                <div className="w-20 h-20 bg-[var(--color-accent-gold)]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Lock size={32} className="text-[var(--color-accent-gold)]" />
-                </div>
-                <h3 className="text-3xl font-cormorant font-bold text-[var(--color-primary)] mb-4">
-                   Segera Hadir!
-                </h3>
-                <p className="text-[var(--color-foreground)]/70 mb-8">
-                  Game ini sedang dalam tahap pengembangan. Kami sedang menyiapkan pengalaman musikal yang luar biasa untukmu!
-                </p>
-                <button
-                  onClick={() => setShowDevModal(false)}
-                  className="w-full py-4 bg-[var(--color-primary)] text-white rounded-xl font-bold hover:bg-[var(--color-secondary)] transition-colors shadow-lg"
-                >
-                  Dimengerti
-                </button>
-              </div>
-            </motion.div>
-          </div>
         )}
       </AnimatePresence>
 
