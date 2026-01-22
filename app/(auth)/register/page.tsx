@@ -91,6 +91,50 @@ export default function RegisterPage() {
           />
           <div className="absolute inset-0 bg-[#543310]/40" />
         </motion.div>
+
+        {/* Content Overlay */}
+        <div className="relative z-10 h-full flex flex-col justify-center items-center p-12 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.3 }}
+            className="space-y-6"
+          >
+            {/* Logo/Title */}
+            <div className="space-y-4">
+              <h1 className="text-6xl font-black text-[#F8F4E1] uppercase tracking-wider font-serif">
+                Widyatara
+              </h1>
+              <div className="w-32 h-1 bg-[#D97706] mx-auto" />
+            </div>
+
+            {/* Tagline */}
+            <p className="text-2xl text-[#F8F4E1] font-medium max-w-md mx-auto leading-relaxed">
+              Jelajahi Kekayaan Budaya Nusantara
+            </p>
+
+            {/* Features */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 0.8 }}
+              className="mt-12 space-y-4 text-background"
+            >
+              <div className="flex items-center gap-3 justify-center">
+                <div className="w-2 h-2 bg-[#D97706] rounded-full" />
+                <span className="text-sm font-medium tracking-wide">Permainan Interaktif</span>
+              </div>
+              <div className="flex items-center gap-3 justify-center">
+                <div className="w-2 h-2 bg-[#D97706] rounded-full" />
+                <span className="text-sm font-medium tracking-wide">Pelajari Tradisi Lokal</span>
+              </div>
+              <div className="flex items-center gap-3 justify-center">
+                <div className="w-2 h-2 bg-[#D97706] rounded-full" />
+                <span className="text-sm font-medium tracking-wide">Raih Pencapaian</span>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
       </div>
 
       {/* Register Form - Flat Design */}
