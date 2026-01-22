@@ -15,7 +15,7 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
   const isNoNavPage =
-    pathname === "/" || pathname === "/Papua" || pathname === "/Jawa/game1";
+    pathname === "/" || pathname === "/Jawa/game1" || pathname === "/Jawa/game2" || pathname === "/Papua/game2";
 
   if (isAuthPage || isNoNavPage) {
     return <>{children}</>;

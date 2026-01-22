@@ -463,7 +463,8 @@ const Navbar = () => {
                 <div className="flex flex-col gap-5">
                   {/* Profile Button */}
                   <div>
-                    <button
+                    <Link
+                      href="/profile"
                       onClick={() => setIsMobileDropdownOpen(false)}
                       className="w-full flex items-center justify-start gap-3"
                     >
@@ -471,7 +472,7 @@ const Navbar = () => {
                       <span className="text-[#543310] font-semibold">
                         Profil Saya
                       </span>
-                    </button>
+                    </Link>
                   </div>
 
                   {/* Logout Button */}

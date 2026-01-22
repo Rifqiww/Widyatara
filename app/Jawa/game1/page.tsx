@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import * as THREE from "three";
 
 import { GamelanSynth } from "./utils/audio";
@@ -558,6 +559,20 @@ export default function GamelanGame() {
 
       {/* 3D Canvas Container */}
       <div ref={containerRef} className="absolute inset-0 z-10" />
+
+      {/* Back Button (Top Left) - Only shown in Menu */}
+      {gameState === "MENU" && (
+        <div className="absolute top-4 left-4 z-100">
+          <button
+            onClick={() => router.push("/Jawa")}
+            className="cursor-pointer bg-amber-900/40 hover:bg-amber-800/60 backdrop-blur-md text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-2xl border border-white/10 group active:scale-95"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-bold tracking-wide">Kembali</span>
+          </button>
+        </div>
+      )}
 
       {/* UI Layers */}
       <StartScreen onStart={startGame} hidden={gameState !== "MENU"} />

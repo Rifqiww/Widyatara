@@ -108,7 +108,7 @@ export default function NusantaraPage() {
 
       {/* Map Interactive Container - Scrollable on Mobile */}
       <div
-        className="relative w-full md:max-w-7xl px-0 md:px-4 flex-1 flex items-center md:justify-center overflow-x-auto md:overflow-visible pb-20 md:pb-0"
+        className="relative w-full md:max-w-7xl pl-20 md:px-4 flex-1 flex items-center md:justify-center overflow-x-auto md:overflow-visible pb-20 md:pb-0"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }} // Hide scrollbar Firefox/IE
       >
         <style jsx>{`
@@ -217,6 +217,7 @@ export default function NusantaraPage() {
               {/* Action Button (Pill) */}
               <button
                 className="
+                   cursor-pointer
                    group relative overflow-hidden shrink-0
                    px-5 py-2.5 md:px-6 md:py-3
                    bg-[#AF8F6F] hover:bg-[#543310] text-[#F8F4E1]
