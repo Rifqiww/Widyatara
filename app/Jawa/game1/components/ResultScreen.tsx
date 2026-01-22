@@ -20,7 +20,7 @@ export const ResultScreen = ({
     style={{ zIndex: 60 }}
   >
     <h2
-      className={`text-5xl font-serif font-bold mb-2 drop-shadow-[0_0_10px_rgba(212,175,55,0.7)] ${type === "WIN" ? "text-[#d4af37]" : "text-red-500"}`}
+      className={`text-5xl font-serif flex items-center justify-center font-bold mb-2 drop-shadow-[0_0_10px_rgba(212,175,55,0.7)] text-center w-full ${type === "WIN" ? "text-[#d4af37]" : "text-red-500"}`}
     >
       {type === "WIN" ? "TEMBANG SELESAI" : "GAME OVER"}
     </h2>
