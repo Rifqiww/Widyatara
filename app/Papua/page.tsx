@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useTransitionContext } from "@/components/TransitionContext";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Maximize2, Users, TrendingUp } from "lucide-react";
 
 export default function PapuaSelectionPage() {
     const router = useRouter();
@@ -93,6 +94,9 @@ export default function PapuaSelectionPage() {
 
         // --- MODELS ---
         const loader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+        loader.setDRACOLoader(dracoLoader);
 
         // Shadow Catcher
         const groundGeo = new THREE.PlaneGeometry(100, 100);
@@ -386,51 +390,100 @@ export default function PapuaSelectionPage() {
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            className="max-w-4xl w-full bg-white/80 backdrop-blur-md rounded-3xl overflow-hidden shadow-2xl border border-[#8B5A2B]/20 flex flex-col md:flex-row"
+                            className="max-w-5xl w-full bg-white/90 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-16px_rgba(61,40,23,0.3)] border border-[#8B5A2B]/30 flex flex-col md:flex-row relative"
                         >
-                            {/* Image Section */}
-                            <div className="md:w-1/3 bg-[#8B5A2B]/10 flex items-center justify-center p-8 relative overflow-hidden">
-                                <div className="absolute inset-0 opacity-10">
-                                    <div className="absolute top-0 left-0 w-32 h-32 bg-[#8B5A2B] rounded-full -translate-x-16 -translate-y-16 blur-3xl"></div>
-                                    <div className="absolute bottom-0 right-0 w-32 h-32 bg-[#D4A373] rounded-full translate-x-16 translate-y-16 blur-3xl"></div>
-                                </div>
-                                <motion.div
-                                    animate={{ y: [0, -10, 0] }}
-                                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                                >
-                                    <Image
-                                        src="/assets/Sulawesi/game1/Thinking.png"
-                                        alt="Thinking Mascot"
-                                        width={300}
-                                        height={300}
-                                        className="relative z-10 object-contain"
-                                    />
-                                </motion.div>
-                            </div>
-
-                            {/* Content Section */}
-                            <div className="md:w-2/3 p-8 md:p-12 flex flex-col justify-center">
-                                <h1 className="text-4xl md:text-5xl font-bold text-[#3D2817] mb-6" style={{ fontFamily: 'var(--font-cormorant), serif' }}>
+                            {/* Content Section (Left) */}
+                            <div className="md:w-3/5 p-8 md:p-14 flex flex-col justify-center order-2 md:order-1">
+                                <h1 className="text-4xl md:text-6xl font-bold text-[#3D2817] mb-6" style={{ fontFamily: 'var(--font-cormorant), serif' }}>
                                     Jelajahi Pulau Papua
                                 </h1>
-                                <div className="space-y-4 text-[#3D2817]/80 leading-relaxed mb-8">
-                                    <p>
+                                <div className="space-y-6 text-[#3D2817]/80 leading-relaxed mb-10">
+                                    <p className="text-lg">
                                         Papua, tanah matahari terbit di ufuk timur Indonesia, adalah rumah bagi keragaman budaya yang luar biasa. 
-                                        Dari pegunungan Jayawijaya yang bersalju hingga pesisir pantai yang kaya akan sumber daya alam, Papua menyimpan sejarah panjang peradaban yang harmonis dengan alam.
+                                        Dari pegunungan Jayawijaya yang bersalju hingga pesisir pantai yang kaya akan sumber daya alam.
                                     </p>
-                                    <p>
+                                    
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-6 border-y border-[#8B5A2B]/20">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2 text-[#8B5A2B]">
+                                                <Maximize2 size={16} />
+                                                <span className="text-[10px] uppercase font-black tracking-widest leading-none">Luas</span>
+                                            </div>
+                                            <span className="text-xl font-bold text-[#3D2817]">786k <span className="text-xs font-normal opacity-60">km²</span></span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2 text-[#8B5A2B]">
+                                                <Users size={16} />
+                                                <span className="text-[10px] uppercase font-black tracking-widest leading-none">Suku</span>
+                                            </div>
+                                            <span className="text-xl font-bold text-[#3D2817]">250+ <span className="text-xs font-normal opacity-60">Suku</span></span>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2 text-[#8B5A2B]">
+                                                <TrendingUp size={16} />
+                                                <span className="text-[10px] uppercase font-black tracking-widest leading-none">Puncak</span>
+                                            </div>
+                                            <span className="text-xl font-bold text-[#3D2817]">4.884 <span className="text-xs font-normal opacity-60">mdpl</span></span>
+                                        </div>
+                                    </div>
+
+                                    <p className="opacity-70 text-sm">
                                         Dikenal dengan burung Cendrawasih yang ikonik dan tradisi seni ukir Asmat yang mendunia. 
-                                        Mari kita jelajahi kekayaan geografi, tradisi unik, dan kehangatan penduduk Papua melalui petualangan seru ini!
+                                        Mari kita jelajahi kekayaan geografi melalui petualangan seru ini!
                                     </p>
                                 </div>
 
                                 <button
                                     onClick={() => setStep(1)}
-                                    className="w-full md:w-max px-8 py-4 bg-[#3D2817] text-[#FFF8E7] rounded-full font-bold hover:bg-[#5A3E2B] transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2 group"
+                                    className="w-full md:w-max px-10 py-5 bg-[#3D2817] text-[#FFF8E7] rounded-2xl font-black uppercase tracking-widest hover:bg-[#5A3E2B] transition-all transform hover:scale-105 shadow-[0_12px_24px_rgba(61,40,23,0.3)] flex items-center justify-center gap-3 group"
                                 >
                                     Mulai Petualangan
-                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
                                 </button>
+                            </div>
+
+                            {/* Island Section (Right) */}
+                            <div className="md:w-2/5 bg-gradient-to-br from-[#8B5A2B]/10 to-[#3D2817]/5 flex items-center justify-center p-8 md:p-12 relative overflow-hidden order-1 md:order-2 border-b md:border-b-0 md:border-l border-[#8B5A2B]/20">
+                                {/* Decorative elements */}
+                                <div className="absolute -top-4 -right-4 md:top-0 md:right-0 p-4 md:p-8 opacity-20 rotate-12">
+                                    <Image 
+                                        src="/assets/Sulawesi/game1/Thinking.png" 
+                                        alt="Mascot Ornament" 
+                                        width={160} 
+                                        height={160} 
+                                        className="w-24 h-24 md:w-40 md:h-40 object-contain"
+                                    />
+                                </div>
+                                
+                                <motion.div
+                                    animate={{ 
+                                        y: [0, -20, 0],
+                                        rotateZ: [0, 2, 0],
+                                        scale: [1, 1.05, 1] 
+                                    }}
+                                    transition={{ 
+                                        duration: 6, 
+                                        repeat: Infinity, 
+                                        ease: "easeInOut" 
+                                    }}
+                                    style={{
+                                        filter: 'drop-shadow(0 20px 30px rgba(61,40,23,0.2))'
+                                    }}
+                                    className="relative z-10 w-full max-w-[320px] md:max-w-none"
+                                >
+                                    <Image
+                                        src="/pulau/papua.svg"
+                                        alt="Peta Papua"
+                                        width={500}
+                                        height={500}
+                                        className="w-full h-auto drop-shadow-2xl"
+                                    />
+                                    
+                                    {/* Subtitle label for visual depth */}
+                                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg border border-[#8B5A2B]/10 whitespace-nowrap">
+                                        <span className="text-[#3D2817] font-black text-xs uppercase tracking-[0.4em] ml-[0.4em]">TERRA PAPUA</span>
+                                    </div>
+                                </motion.div>
                             </div>
                         </motion.div>
                     </div>

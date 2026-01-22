@@ -1,13 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTransitionContext } from "@/components/TransitionContext";
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Footprints, Brain, ArrowRight } from "lucide-react";
+import { ArrowRight, Maximize2, Users, TrendingUp, Play, Lock, X } from "lucide-react";
 
 export default function KalimantanOnboarding() {
+  const router = useRouter();
+  const { triggerTransition } = useTransitionContext();
+  const mountRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [hoveredGame, setHoveredGame] = useState<string | null>(null);
+  const [activeGameIndex, setActiveGameIndex] = useState(0); // 0: Egrang, 1: Manukan
+  const [isMobile, setIsMobile] = useState(false);
   const [step, setStep] = useState(0);
+  const [showDevModal, setShowDevModal] = useState(false);
 
   const containerVariants = {
     initial: { opacity: 0, y: 20 },
@@ -15,8 +27,251 @@ export default function KalimantanOnboarding() {
     exit: { opacity: 0, y: -20 },
   };
 
+  // Refs for 3D state
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const modelsRef = useRef<{ [key: string]: THREE.Group }>({});
+  const animationFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    // Mobile check
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    if (step !== 1 || !mountRef.current) return;
+
+    // --- SETUP SCENE ---
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 2, 6);
+    cameraRef.current = camera;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const width = mountRef.current.clientWidth || window.innerWidth;
+    const height = mountRef.current.clientHeight || window.innerHeight;
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    mountRef.current.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    dirLight.position.set(5, 10, 7);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    const loader = new GLTFLoader();
+
+    // Shadow Catcher
+    const groundGeo = new THREE.PlaneGeometry(100, 100);
+    const groundMat = new THREE.ShadowMaterial({ opacity: 0.2 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -1;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    const loadModel = (path: string, id: string, name: string, pos: [number, number, number], scale: number) => {
+      loader.load(path, 
+        (gltf) => {
+          const model = gltf.scene;
+
+          // Apply responsiveness to scale and position
+          const finalScale = isMobile ? scale * 0.7 : scale;
+          const finalPos: [number, number, number] = isMobile ? [0, pos[1], pos[2]] : pos;
+
+          model.position.set(...finalPos);
+          model.scale.set(finalScale, finalScale, finalScale);
+          model.traverse((c) => {
+            if (c instanceof THREE.Mesh) {
+              c.castShadow = true;
+              c.receiveShadow = true;
+              if (id === 'egrang' && c.material) {
+                const mat = Array.isArray(c.material) ? c.material : [c.material];
+                mat.forEach(m => {
+                  if ('color' in m) (m as any).color.set(0x22c55e);
+                });
+              }
+            }
+          });
+          model.userData = { id, name, originalScale: finalScale, basePos: finalPos };
+          scene.add(model);
+          modelsRef.current[id] = model;
+
+          if (Object.keys(modelsRef.current).length === 2) {
+            setLoading(false);
+          }
+        }
+      );
+    };
+
+    loadModel('/Kalimantan/Egrang.glb', 'egrang', 'Tantangan Egrang', [-3, -2, 0], 2.1);
+    loadModel('/Kalimantan/Manukan.glb', 'manukan', 'Memori Patung Dayak', [3, 0, 0], 2.1);
+
+    // Fallback if models take too long or fail
+    const fallbackTimeout = setTimeout(() => {
+      if (Object.keys(modelsRef.current).length === 0) {
+        console.warn("Models failed to load within 5s");
+      }
+    }, 5000);
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const animate = () => {
+      animationFrameRef.current = requestAnimationFrame(animate);
+      Object.values(modelsRef.current).forEach(model => {
+        const isHovered = model.userData.hovered;
+        const isActive = isMobile && ((model.userData.id === 'egrang' && activeGameIndex === 0) || (model.userData.id === 'manukan' && activeGameIndex === 1));
+
+        const baseScale = model.userData.originalScale;
+        const targetScale = (isHovered || isActive) ? baseScale * 1.1 : baseScale;
+        model.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+      });
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (window.innerWidth < 768) return;
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(Object.values(modelsRef.current), true);
+      let hitId: string | null = null;
+      if (intersects.length > 0) {
+        document.body.style.cursor = 'pointer';
+        let obj = intersects[0].object;
+        while (obj.parent && !obj.userData.id) obj = obj.parent;
+        if (obj.userData.id) hitId = obj.userData.id;
+      }
+      Object.values(modelsRef.current).forEach(m => {
+        m.userData.hovered = (m.userData.id === (hitId as any));
+      });
+      if (hitId) {
+        setHoveredGame(hitId);
+      } else {
+        document.body.style.cursor = 'default';
+        setHoveredGame(null);
+      }
+    };
+
+    const onClick = (event: MouseEvent) => {
+      if (window.innerWidth < 768) return;
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(Object.values(modelsRef.current), true);
+      if (intersects.length > 0) {
+        let obj = intersects[0].object;
+        while (obj.parent && !obj.userData.id) obj = obj.parent;
+        const target = obj.userData.id === 'egrang' ? '/Kalimantan/game1' : '/Kalimantan/game2';
+        router.push(target);
+      }
+    };
+
+    const onResize = () => {
+      if (!cameraRef.current || !rendererRef.current || !mountRef.current) return;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      cameraRef.current.aspect = width / height;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(width, height);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousedown', onClick);
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mousedown', onClick);
+      window.removeEventListener('resize', onResize);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+      }
+      clearTimeout(fallbackTimeout);
+    };
+  }, [step, isMobile]); // Added isMobile to dependencies
+
+  useEffect(() => {
+    if (step !== 1) return;
+    const updateCam = () => {
+      if (!cameraRef.current) return;
+      if (window.innerWidth < 768) {
+        // Mobile camera: target the active model with better distance
+        const targetX = 0; 
+        const cameraY = activeGameIndex === 0 ? 0 : 0.5; // Adjust height per model
+        const targetPos = new THREE.Vector3(targetX, cameraY, 10);
+        cameraRef.current.position.lerp(targetPos, 0.1);
+        cameraRef.current.lookAt(0, 0, 0);
+
+        // Update model visibility
+        Object.values(modelsRef.current).forEach(model => {
+          const isActive = (model.userData.id === 'egrang' && activeGameIndex === 0) || 
+                          (model.userData.id === 'manukan' && activeGameIndex === 1);
+          model.visible = isActive;
+          
+          // Move up slightly on mobile to avoid UI overlap
+          const mobileY = model.userData.id === 'egrang' ? -0.5 : 0; 
+          model.position.y = THREE.MathUtils.lerp(model.position.y, mobileY, 0.1);
+        });
+      } else {
+        // Desktop camera
+        cameraRef.current.position.lerp(new THREE.Vector3(0, 2, 8), 0.05);
+        cameraRef.current.lookAt(0, 0, 0);
+        Object.values(modelsRef.current).forEach(model => {
+          model.visible = true;
+          // Restore desktop positions
+          const originalX = model.userData.id === 'egrang' ? -3 : 3;
+          model.position.x = THREE.MathUtils.lerp(model.position.x, originalX, 0.1);
+          model.position.y = THREE.MathUtils.lerp(model.position.y, model.userData.basePos[1], 0.1);
+        });
+      }
+    };
+    const loop = setInterval(updateCam, 16);
+    return () => clearInterval(loop);
+  }, [step, activeGameIndex]);
+
+  const touchStartRef = useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => touchStartRef.current = e.touches[0].clientX;
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartRef.current === null) return;
+    const diff = touchStartRef.current - e.changedTouches[0].clientX;
+    if (diff > 50 && activeGameIndex === 0) setActiveGameIndex(1);
+    if (diff < -50 && activeGameIndex === 1) setActiveGameIndex(0);
+    touchStartRef.current = null;
+  };
+
+  const handlePlay = () => {
+    const target = activeGameIndex === 0 ? '/Kalimantan/game1' : '/Kalimantan/game2';
+    triggerTransition(target);
+    setTimeout(() => {
+      window.location.href = target;
+    }, 2500);
+  };
+
   return (
-    <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center p-4 md:p-8 font-plus-jakarta mt-10">
+    <div 
+      className="min-h-screen md:h-screen w-full bg-[var(--color-background)] flex items-center justify-center font-plus-jakarta relative overflow-y-auto md:overflow-hidden py-10 md:py-0"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Three.js Canvas Container (Always Mounted) */}
+      <div 
+        ref={mountRef} 
+        className={`absolute inset-0 transition-opacity duration-1000 ${step === 1 ? 'z-10 opacity-100' : 'z-[-1] opacity-0'}`} 
+      />
+
       <AnimatePresence mode="wait">
         {step === 0 ? (
           <motion.div
@@ -25,134 +280,221 @@ export default function KalimantanOnboarding() {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="max-w-4xl w-full bg-white/50 backdrop-blur-md rounded-3xl overflow-hidden shadow-2xl border border-[var(--color-accent)]/20 flex flex-col md:flex-row"
+            className="max-w-5xl w-[92%] md:w-full bg-white/90 backdrop-blur-xl rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-16px_rgba(20,83,45,0.2)] border border-[var(--color-accent)]/30 flex flex-col md:flex-row relative mb-20 md:mb-0"
           >
-            {/* Image Section */}
-            <div className="md:w-1/3 bg-[var(--color-primary)]/10 flex items-center justify-center p-8 relative overflow-hidden">
-               <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-0 left-0 w-32 h-32 bg-[var(--color-accent-gold)] rounded-full -translate-x-16 -translate-y-16 blur-3xl"></div>
-                  <div className="absolute bottom-0 right-0 w-32 h-32 bg-[var(--color-accent)] rounded-full translate-x-16 translate-y-16 blur-3xl"></div>
-               </div>
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Image
-                  src="/assets/Sulawesi/game1/Thinking.png"
-                  alt="Thinking Mascot"
-                  width={300}
-                  height={300}
-                  className="relative z-10 object-contain"
-                />
-              </motion.div>
-            </div>
-
-            {/* Content Section */}
-            <div className="md:w-2/3 p-8 md:p-12 flex flex-col justify-center">
-              <h1 className="text-4xl md:text-5xl font-cormorant font-bold text-[var(--color-primary)] mb-6">
+            {/* Content Section (Left) */}
+            <div className="md:w-3/5 p-8 md:p-14 flex flex-col justify-center order-2 md:order-1 pb-20 md:pb-14">
+              <h1 className="text-4xl md:text-6xl font-bold text-[var(--color-primary)] mb-6" style={{ fontFamily: 'var(--font-cormorant), serif' }}>
                 Jelajahi Pulau Kalimantan
               </h1>
-              <div className="space-y-4 text-[var(--color-foreground)]/80 leading-relaxed mb-8">
-                <p>
+              <div className="space-y-6 text-[var(--color-foreground)]/80 leading-relaxed mb-10">
+                <p className="text-lg">
                   Kalimantan, bagian dari pulau Borneo yang megah, adalah rumah bagi sejarah purba Nusantara. 
-                  Dari Kerajaan Kutai Martapura yang merupakan kerajaan tertua di Indonesia, hingga kekayaan tradisi Dayak yang harmonis dengan alam.
+                  Dari Kerajaan Kutai Martapura hingga tradisi Dayak yang harmonis dengan alam.
                 </p>
-                <p>
-                  Dikenal dengan sungai-sungainya yang raksasa dan hutan hujan khatulistiwa yang menjadi paru-paru dunia. 
-                  Mari kita pelajari lebih dalam mengenai kekayaan geografi, penduduk, dan budaya Kalimantan melalui petualangan ini!
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-6 border-y border-[var(--color-accent)]/20">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-[var(--color-accent-gold)]">
+                      <Maximize2 size={16} />
+                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">Luas</span>
+                    </div>
+                    <span className="text-xl font-bold text-[var(--color-primary)]">534k <span className="text-xs font-normal opacity-60">km²</span></span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-[var(--color-accent-gold)]">
+                      <Users size={16} />
+                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">Warga</span>
+                    </div>
+                    <span className="text-xl font-bold text-[var(--color-primary)]">17.5M <span className="text-xs font-normal opacity-60">Jiwa</span></span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-[var(--color-accent-gold)]">
+                      <TrendingUp size={16} />
+                      <span className="text-[10px] uppercase font-black tracking-widest leading-none">Tinggi</span>
+                    </div>
+                    <span className="text-xl font-bold text-[var(--color-primary)]">5.5% <span className="text-xs font-normal opacity-60">Tahunan</span></span>
+                  </div>
+                </div>
+
+                <p className="opacity-70 text-sm">
+                  Dikenal dengan sungai-sungainya yang raksasa and hutan hujan khatulistiwa yang menjadi paru-paru dunia. 
+                  Mari kita pelajari lebih dalam mengenai kekayaan geografi Kalimantan!
                 </p>
               </div>
 
               <button
                 onClick={() => setStep(1)}
-                className="w-full md:w-max px-8 py-4 bg-[var(--color-primary)] text-[var(--color-background)] rounded-full font-bold hover:bg-[var(--color-secondary)] transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2 group"
+                className="w-full md:w-max px-10 py-5 bg-[var(--color-primary)] text-white rounded-2xl font-black uppercase tracking-widest hover:bg-[var(--color-secondary)] transition-all transform hover:scale-105 shadow-[0_12px_24px_rgba(20,83,45,0.3)] flex items-center justify-center gap-3 group"
               >
                 Mulai Petualangan
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
               </button>
+            </div>
+
+            {/* Island Section (Right) */}
+            <div className="md:w-2/5 bg-gradient-to-br from-[var(--color-primary)]/10 to-[var(--color-accent-gold)]/5 flex items-center justify-center p-8 md:p-12 relative overflow-hidden order-1 md:order-2 border-b md:border-b-0 md:border-l border-[var(--color-accent)]/20">
+              {/* Decorative elements */}
+              <div className="absolute -top-4 -right-4 md:top-0 md:right-0 p-4 md:p-8 opacity-20 rotate-12">
+                <Image 
+                  src="/assets/Sulawesi/game1/Thinking.png" 
+                  alt="Mascot Ornament" 
+                  width={160} 
+                  height={160} 
+                  className="w-24 h-24 md:w-40 md:h-40 object-contain"
+                />
+              </div>
+              
+              <motion.div
+                style={{
+                  filter: 'drop-shadow(0 20px 30px rgba(20,83,45,0.2))'
+                }}
+                className="relative z-10 w-full max-w-[320px] md:max-w-none"
+              >
+                <Image
+                  src="/pulau/kalimantan.svg"
+                  alt="Peta Kalimantan"
+                  width={500}
+                  height={500}
+                  className="w-full h-auto drop-shadow-2xl"
+                />
+                
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg border border-[var(--color-accent)]/10 whitespace-nowrap">
+                  <span className="text-[var(--color-primary)] font-black text-xs uppercase tracking-[0.4em] ml-[0.4em]">EQUATOR LAND</span>
+                </div>
+              </motion.div>
             </div>
           </motion.div>
         ) : (
           <motion.div
-            key="games"
-            variants={containerVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="max-w-6xl w-full"
+            key="selection"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-10"
           >
-            <div className="text-center mb-12">
-              <h2 className="text-4xl md:text-5xl font-cormorant font-bold text-[var(--color-primary)] mb-4">
-                Pilih Permainanmu
-              </h2>
-              <p className="text-[var(--color-foreground)]/70 max-w-2xl mx-auto">
-                Dua permainan seru menantimu untuk mengenal lebih dekat budaya Kalimantan yang unik.
+            {/* Header */}
+            <div className="absolute top-24 md:top-32 w-full text-center pointer-events-none z-20">
+              <h1 className="text-3xl md:text-6xl font-extrabold text-[var(--color-primary)] tracking-tight mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                Belajar Budaya Kalimantan
+              </h1>
+              <div className="flex items-center justify-center gap-3 mt-3">
+                <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent opacity-50"></div>
+                <p className="text-[var(--color-accent)] text-sm md:text-base tracking-[0.3em] uppercase font-semibold opacity-70">
+                  Pilih Permainan
+                </p>
+                <div className="h-[2px] w-12 bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent opacity-50"></div>
+              </div>
+            </div>
+
+            {/* Selection Text Overlay */}
+            <div className="absolute inset-0 pointer-events-none z-10">
+              {(hoveredGame === 'egrang' || (isMobile && activeGameIndex === 0)) && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-52 md:left-[35%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out mb-22">
+                  <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2">
+                    <h2 className="text-2xl md:text-3xl font-black text-[var(--color-primary)] uppercase text-center md:text-left">
+                      Tantangan Egrang
+                    </h2>
+                    <p className="text-sm md:text-base text-[var(--color-foreground)]/80 leading-relaxed text-center md:text-left">
+                      Uji keseimbanganmu dalam permainan tradisional egrang bambu yang melatih fokus.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {(hoveredGame === 'manukan' || (isMobile && activeGameIndex === 1)) && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-auto bottom-52 md:left-[85%] md:top-1/2 md:-translate-y-1/2 md:translate-x-0 md:bottom-auto max-w-md transition-all duration-500 ease-out mb-22">
+                  <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl space-y-2">
+                    <h2 className="text-2xl md:text-3xl font-black text-[var(--color-primary)] uppercase text-center md:text-left">
+                      Memori Patung Dayak
+                    </h2>
+                    <p className="text-sm md:text-base text-[var(--color-foreground)]/80 leading-relaxed text-center md:text-left">
+                      Latih ketajaman memori melalui simbol-simbol ukiran totem Dayak yang unik.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Controls */}
+            <div className="md:hidden absolute bottom-8 w-full flex flex-col items-center gap-5 z-20">
+              <div className="flex gap-3 mb-1">
+                <div className={`h-2.5 rounded-full transition-all duration-300 ${activeGameIndex === 0 ? 'w-8 bg-[var(--color-primary)]' : 'w-2.5 bg-[var(--color-primary)]/30'}`} />
+                <div className={`h-2.5 rounded-full transition-all duration-300 ${activeGameIndex === 1 ? 'w-8 bg-[var(--color-primary)]' : 'w-2.5 bg-[var(--color-primary)]/30'}`} />
+              </div>
+              <button 
+                onClick={handlePlay}
+                className="bg-[var(--color-primary)] text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg active:scale-95 transition-all"
+              >
+                MAIN SEKARANG
+              </button>
+            </div>
+
+            {/* Back Button */}
+            <div className="absolute top-6 left-6 z-20">
+              <button
+                onClick={() => setStep(0)}
+                className="bg-white/40 hover:bg-white/60 backdrop-blur-md p-3 rounded-full transition-all shadow-md border border-white/50"
+              >
+                <ArrowRight size={24} className="rotate-180" />
+              </button>
+            </div>
+
+            {/* Hint */}
+            <div className="hidden md:block absolute bottom-8 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+              <p className="text-[var(--color-accent)] text-sm opacity-50 tracking-wide text-center animate-pulse">
+                Arahkan kursor ke model untuk melihat detail
               </p>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Game 1 Card */}
-              <Link href="/Kalimantan/game1" className="group">
-                <motion.div
-                  whileHover={{ y: -10 }}
-                  className="bg-white/50 backdrop-blur-md rounded-3xl p-8 border border-[var(--color-accent)]/20 shadow-xl group-hover:shadow-2xl transition-all h-full flex flex-col items-center text-center relative overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                     <Image src="/assets/Sulawesi/game1/FaceWin.png" alt="Mascot" width={100} height={100} />
-                  </div>
-                  
-                  <div className="w-24 h-24 bg-[var(--color-accent-gold)]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                     <Footprints size={48} className="text-[var(--color-primary)]" />
-                  </div>
-
-                  <h3 className="text-2xl font-cormorant font-bold text-[var(--color-primary)] mb-4">
-                    Tantangan Egrang
-                  </h3>
-                  <p className="text-[var(--color-foreground)]/70 mb-8 flex-grow text-sm leading-relaxed">
-                    Uji keseimbanganmu dalam permainan tradisional egrang bambu yang melatih fokus serta kekuatan fisik secara interaktif.
-                  </p>
-                  <span className="px-6 py-2 bg-[var(--color-primary)] text-[var(--color-background)] rounded-full text-sm font-bold group-hover:bg-[var(--color-accent-gold)] transition-colors">
-                    Main Sekarang
-                  </span>
-                </motion.div>
-              </Link>
-
-              {/* Game 2 Card */}
-              <Link href="/Kalimantan/game2" className="group">
-                <motion.div
-                  whileHover={{ y: -10 }}
-                  className="bg-white/50 backdrop-blur-md rounded-3xl p-8 border border-[var(--color-accent)]/20 shadow-xl group-hover:shadow-2xl transition-all h-full flex flex-col items-center text-center relative overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                     <Image src="/assets/Sulawesi/game1/FaceWin.png" alt="Mascot" width={100} height={100} />
-                  </div>
-
-                  <div className="w-24 h-24 bg-[var(--color-accent-gold)]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                     <Brain size={48} className="text-[var(--color-primary)]" />
-                  </div>
-
-                  <h3 className="text-2xl font-cormorant font-bold text-[var(--color-primary)] mb-4">
-                    Memori Patung Dayak
-                  </h3>
-                  <p className="text-[var(--color-foreground)]/70 mb-8 flex-grow text-sm leading-relaxed">
-                    Latih ketajaman memori melalui simbol-simbol ukiran totem Dayak yang sarat akan makna spiritual dan filosofis.
-                  </p>
-                  <span className="px-6 py-2 bg-[var(--color-primary)] text-[var(--color-background)] rounded-full text-sm font-bold group-hover:bg-[var(--color-accent-gold)] transition-colors">
-                    Main Sekarang
-                  </span>
-                </motion.div>
-              </Link>
-            </div>
-            
-            <motion.button
+      {/* Development Pop-up Modal */}
+      <AnimatePresence>
+        {showDevModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              onClick={() => setStep(0)}
-              className="mt-12 mx-auto block text-[var(--color-primary)] hover:underline font-bold"
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDevModal(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl border border-[var(--color-accent)]/20 overflow-hidden"
             >
-              ← Kembali ke Penjelasan
-            </motion.button>
-          </motion.div>
+              <div className="absolute top-0 right-0 p-4">
+                <button 
+                  onClick={() => setShowDevModal(false)}
+                  className="p-2 hover:bg-black/5 rounded-full transition-colors"
+                >
+                  <X size={20} className="text-[var(--color-primary)]" />
+                </button>
+              </div>
+
+              <div className="text-center">
+                <div className="w-20 h-20 bg-[var(--color-accent-gold)]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Lock size={32} className="text-[var(--color-accent-gold)]" />
+                </div>
+                <h3 className="text-3xl font-cormorant font-bold text-[var(--color-primary)] mb-4">
+                  Level 3 Masih dalam Development
+                </h3>
+                <p className="text-[var(--color-foreground)]/70 mb-8">
+                  Sabar ya! Tim kami sedang mempersiapkan petualangan yang tidak kalah seru untuk level ini. Tunggu update selanjutnya!
+                </p>
+                <button
+                  onClick={() => setShowDevModal(false)}
+                  className="w-full py-4 bg-[var(--color-primary)] text-white rounded-xl font-bold hover:bg-[var(--color-secondary)] transition-colors shadow-lg"
+                >
+                  Dimengerti
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
