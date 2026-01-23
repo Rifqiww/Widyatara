@@ -235,25 +235,30 @@ export default function AngklungGame() {
 
     // Initialize Three.js Scene
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x2d1b3e, 10, 60);
+    scene.fog = new THREE.Fog(0x2d1b3e, 30, 200); // Much further fog to keep sky visible
     sceneRef.current = scene;
 
+    const isMobile = window.innerWidth < 768;
     const camera = new THREE.PerspectiveCamera(
-      50,
+      isMobile ? 80 : 50, // Wider FOV for mobile
       window.innerWidth / window.innerHeight,
       0.1,
-      150,
+      500, // Increased far plane
     );
 
-    const updateCameraX = () => {
+    const updateCamera = () => {
       if (window.innerWidth < 768) {
-        camera.position.set(0, 10, 25);
+        camera.fov = 80;
+        camera.position.set(0, 16, 22); // Closer but higher
+        camera.lookAt(0, 0, 0);
       } else {
+        camera.fov = 50;
         camera.position.set(0, 8, 20);
+        camera.lookAt(0, 2, 0);
       }
-      camera.lookAt(0, 2, 0);
+      camera.updateProjectionMatrix();
     };
-    updateCameraX();
+    updateCamera();
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -302,10 +307,14 @@ export default function AngklungGame() {
     scene.add(sky);
 
     // Lighting
-    const ambLight = new THREE.AmbientLight(0xffaa55, 0.3);
+    const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffd700, 1.2);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    hemiLight.position.set(0, 20, 0);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffd700, 1.5);
     dirLight.position.set(-10, 20, 10);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
@@ -461,7 +470,13 @@ export default function AngklungGame() {
     const handleMouseDown = (e: MouseEvent) =>
       handleInput(e.clientX, e.clientY);
     const handleTouchStart = (e: TouchEvent) => {
-      e.preventDefault();
+      // Allow UI interaction (buttons)
+      const target = e.target as HTMLElement;
+      if (target.tagName === "BUTTON" || target.closest("button")) return;
+
+      if (gameDataRef.current.playing) {
+        e.preventDefault();
+      }
       handleInput(e.touches[0].clientX, e.touches[0].clientY);
     };
 
@@ -526,9 +541,13 @@ export default function AngklungGame() {
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       if (window.innerWidth < 768) {
-        camera.position.set(0, 10, 25);
+        camera.fov = 80;
+        camera.position.set(0, 16, 22);
+        camera.lookAt(0, 0, 0);
       } else {
+        camera.fov = 50;
         camera.position.set(0, 8, 20);
+        camera.lookAt(0, 2, 0);
       }
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);

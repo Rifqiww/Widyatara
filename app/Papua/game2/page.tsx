@@ -471,8 +471,8 @@ export default function PapedaGame() {
 
     // Touch Support
     const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault(); // Prevent scrolling
       if (!paramsRef.current.gameActive) return;
+      e.preventDefault(); // Prevent scrolling ONLY when game is active
 
       const touch = e.touches[0];
       mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
