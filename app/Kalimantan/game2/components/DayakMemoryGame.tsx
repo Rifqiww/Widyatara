@@ -19,7 +19,7 @@ const SYMBOLS: DayakSymbol[] = [
     name: "Burung Enggang",
     meaning: "Simbol kehormatan dan jiwa pemimpin suku",
     color: "#FFD700",
-    modelPath: "/kalimantan/game2/Manukan.glb",
+    modelPath: "/Kalimantan/game2/Manukan.glb",
     frequency: 261.63,
   },
   {
@@ -27,7 +27,7 @@ const SYMBOLS: DayakSymbol[] = [
     name: "Sapundu Ritual",
     meaning: "Tiang kayu sakral penghubung dunia manusia dan roh",
     color: "#BC8F8F",
-    modelPath: "/kalimantan/game2/sapundu.glb",
+    modelPath: "/Kalimantan/game2/sapundu.glb",
     frequency: 329.63,
   },
   {
@@ -35,7 +35,7 @@ const SYMBOLS: DayakSymbol[] = [
     name: "Patung Penjaga",
     meaning: "Penjaga batas desa dari energi negatif",
     color: "#A0522D",
-    modelPath: "/kalimantan/game2/orangorangan.glb",
+    modelPath: "/Kalimantan/game2/orangorangan.glb",
     frequency: 392.0,
   },
   {
@@ -43,7 +43,7 @@ const SYMBOLS: DayakSymbol[] = [
     name: "Ukiran Asmi",
     meaning: "Keseimbangan hubungan manusia dengan pencipta",
     color: "#CD853F",
-    modelPath: "/kalimantan/game2/asmi.glb",
+    modelPath: "/Kalimantan/game2/asmi.glb",
     frequency: 523.25,
   },
 ];
