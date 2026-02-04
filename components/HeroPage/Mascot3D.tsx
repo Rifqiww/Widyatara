@@ -83,32 +83,23 @@ const Mascot3D = ({ className }: { className?: string }) => {
           // Auto-float animation when mouse is not present (for mobile/touch)
           mouseX.get() === 0 && mouseY.get() === 0
             ? {
-                y: [0, -10, 0],
-                transition: {
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                },
-              }
+              y: [0, -10, 0],
+              transition: {
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              },
+            }
             : {}
         }
         className="relative z-10 transform-style-3d group"
       >
         <motion.img
-          src="/hero-mascot.png"
+          src="/mascothero.png"
           alt="Mascot"
-          className="w-full max-w-[240px] sm:max-w-[320px] lg:max-w-[420px] h-auto select-none pointer-events-none drop-shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]"
+          className="w-full max-w-[340px] sm:max-w-[420px] lg:max-w-[620px] h-auto select-none pointer-events-none drop-shadow-2xl stroke-black transition-transform duration-500 group-hover:scale-[1.02]"
         />
 
-        {/* Dynamic Soft Shadow */}
-        <motion.div
-          style={{
-            x: shadowX,
-            y: shadowY,
-            opacity: 0.25,
-          }}
-          className="absolute inset-0 bg-black/40 blur-2xl lg:blur-[60px] rounded-[50%] -z-10 scale-[0.6] translate-y-8 lg:translate-y-12"
-        />
       </motion.div>
     </div>
   );

@@ -414,10 +414,10 @@ export default function AngklungGame() {
 
       // Hitbox
       const hitbox = new THREE.Mesh(
-        new THREE.BoxGeometry(1.5, 6, 2),
+        new THREE.BoxGeometry(1.5, 10, 2),
         new THREE.MeshBasicMaterial({ visible: false }),
       );
-      hitbox.position.y = 3;
+      hitbox.position.y = 5;
       hitbox.userData = { index: i, type: "angklung" };
       modelGroup.add(hitbox);
       angklungHitboxes.push(hitbox);
@@ -526,7 +526,7 @@ export default function AngklungGame() {
         if (n.mesh.position.y < -2) {
           n.active = false;
           noteGroup.remove(n.mesh);
-          updateHUD(0, "MBOYAK");
+          updateHUD(0, "ELEK");
         }
       });
 

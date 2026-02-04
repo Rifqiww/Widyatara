@@ -3,14 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  User, 
-  Mail, 
-  Calendar, 
-  Trophy, 
-  MapPin, 
-  Edit2, 
-  LogOut, 
+import {
+  User,
+  Mail,
+  Calendar,
+  Trophy,
+  MapPin,
+  Edit2,
+  LogOut,
   ChevronRight,
   Star,
   Award,
@@ -41,7 +41,7 @@ export default function ProfilePage() {
         try {
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
-          
+
           if (userDoc.exists()) {
             setUserData(userDoc.data() as UserData);
           } else {
@@ -89,12 +89,12 @@ export default function ProfilePage() {
     );
   }
 
-  const joinDate = userData?.createdAt 
+  const joinDate = userData?.createdAt
     ? new Date(userData.createdAt).toLocaleDateString("id-ID", {
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    })
     : "Tidak diketahui";
 
   const completedGamesCount = userData?.completedGames?.length || 0;
@@ -106,22 +106,22 @@ export default function ProfilePage() {
       {/* Decorative Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          animate={{ 
+          animate={{
             rotate: 360,
             scale: [1, 1.1, 1]
           }}
-          transition={{ 
+          transition={{
             rotate: { duration: 20, repeat: Infinity, ease: "linear" },
             scale: { duration: 5, repeat: Infinity, ease: "easeInOut" }
           }}
           className="absolute -top-20 -right-20 w-96 h-96 bg-[#AF8F6F]/10 rounded-full blur-3xl"
         />
         <motion.div
-          animate={{ 
+          animate={{
             rotate: -360,
             scale: [1, 1.2, 1]
           }}
-          transition={{ 
+          transition={{
             rotate: { duration: 25, repeat: Infinity, ease: "linear" },
             scale: { duration: 7, repeat: Infinity, ease: "easeInOut" }
           }}
@@ -163,7 +163,7 @@ export default function ProfilePage() {
             <div className="bg-white border-4 border-[#543310] p-6 md:p-8 relative overflow-hidden">
               {/* Decorative Corner */}
               <div className="absolute top-0 right-0 w-20 h-20 bg-[#543310] opacity-10 transform rotate-45 translate-x-10 -translate-y-10" />
-              
+
               {/* Mascot Image */}
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -171,18 +171,18 @@ export default function ProfilePage() {
                 transition={{ duration: 0.8, delay: 0.4 }}
                 className="relative mb-6"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-[#D97706]/20 to-[#9F1239]/20 rounded-full blur-2xl" />
+
                 <img
-                  src="/hero-mascot.png"
+                  src="/mascotbg.png"
                   alt="Widyatara Mascot"
-                  className="w-full max-w-[250px] mx-auto relative z-10 drop-shadow-2xl"
+                  className="w-full max-w-[500px] mx-auto relative z-10 drop-shadow-2xl"
                 />
                 <motion.div
-                  animate={{ 
+                  animate={{
                     rotate: [0, 5, -5, 0],
                     y: [0, -10, 0]
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 3,
                     repeat: Infinity,
                     ease: "easeInOut"
